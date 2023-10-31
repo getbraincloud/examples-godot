@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bp5kxul72qcbf"]
 
 [ext_resource type="Script" path="res://Main.cs" id="1_lg0b6"]
-[ext_resource type="Texture2D" uid="uid://c0h0v3c11i5w6" path="res://LogoBrainCloud.png" id="2_qiat5"]
+[ext_resource type="Texture2D" uid="uid://8k00k6iev4e2" path="res://brainCloud_Godot_logo_h_dark.png" id="2_w05l1"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_lg0b6")
@@ -15,14 +15,16 @@ grow_vertical = 2
 color = Color(0.117647, 0.117647, 0.117647, 1)
 
 [node name="BrainCloudLogo" type="TextureRect" parent="."]
-custom_minimum_size = Vector2(550, 75)
+custom_minimum_size = Vector2(1024, 150)
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -275.0
-offset_right = 275.0
-offset_bottom = 75.0
+offset_left = -512.0
+offset_top = 10.0
+offset_right = 512.0
+offset_bottom = 160.0
 grow_horizontal = 2
 size_flags_horizontal = 4
-texture = ExtResource("2_qiat5")
+texture = ExtResource("2_w05l1")
 expand_mode = 1
+stretch_mode = 5
