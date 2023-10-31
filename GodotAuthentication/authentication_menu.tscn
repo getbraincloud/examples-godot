@@ -1,0 +1,76 @@
+[gd_scene load_steps=6 format=3 uid="uid://dqas1obeuelxs"]
+
+[ext_resource type="Script" path="res://AuthenticationMenu.cs" id="1_w3f78"]
+[ext_resource type="StyleBox" uid="uid://dni1ghgmpoo3g" path="res://Resources/line_edit_style_box.tres" id="2_bche7"]
+[ext_resource type="StyleBox" uid="uid://c6sxc74yse72e" path="res://Resources/line_edit_style_box_focus.tres" id="3_he8kq"]
+[ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="4_2m8g1"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="5_nqhii"]
+
+[node name="AuthenticationMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_w3f78")
+
+[node name="AuthenticationFields" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -80.5
+offset_top = -65.5
+offset_right = 80.5
+offset_bottom = 65.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AuthenticationTypeHeader" type="Label" parent="AuthenticationFields"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "Select Authentication Type: "
+horizontal_alignment = 1
+
+[node name="AuthenticationOptions" type="OptionButton" parent="AuthenticationFields"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/focus = ExtResource("3_he8kq")
+theme_override_styles/normal = ExtResource("2_bche7")
+
+[node name="IDFields" type="VBoxContainer" parent="AuthenticationFields"]
+layout_mode = 2
+
+[node name="UserIDLine" type="LineEdit" parent="AuthenticationFields/IDFields"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+theme_override_styles/normal = ExtResource("2_bche7")
+theme_override_styles/focus = ExtResource("3_he8kq")
+clear_button_enabled = true
+
+[node name="PasswordLine" type="LineEdit" parent="AuthenticationFields/IDFields"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+theme_override_styles/normal = ExtResource("2_bche7")
+theme_override_styles/focus = ExtResource("3_he8kq")
+placeholder_text = "Password"
+secret = true
+clear_button_enabled = true
+
+[node name="AuthenticationMenuMessage" type="Label" parent="AuthenticationFields"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Please fill in all fields"
+horizontal_alignment = 1
+
+[node name="AuthenticateButton" type="Button" parent="AuthenticationFields"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+theme_override_styles/normal = ExtResource("4_2m8g1")
+theme_override_styles/hover = ExtResource("5_nqhii")
+theme_override_styles/pressed = ExtResource("4_2m8g1")
+theme_override_styles/focus = ExtResource("5_nqhii")
+text = "LOG IN"

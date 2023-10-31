@@ -1,0 +1,122 @@
+[gd_scene load_steps=7 format=3 uid="uid://di41yokhn2o73"]
+
+[ext_resource type="Script" path="res://Identity.cs" id="1_vb2bi"]
+[ext_resource type="StyleBox" uid="uid://dni1ghgmpoo3g" path="res://Resources/line_edit_style_box.tres" id="1_vqrn4"]
+[ext_resource type="StyleBox" uid="uid://c6sxc74yse72e" path="res://Resources/line_edit_style_box_focus.tres" id="2_7kx43"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="4_un3m7"]
+[ext_resource type="StyleBox" uid="uid://ekj2c0je2hyw" path="res://Resources/delete_button_style_box_focus.tres" id="5_uhi7e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o47yt"]
+bg_color = Color(0.0823529, 0.403922, 0.858824, 1)
+border_color = Color(0.0823529, 0.403922, 0.858824, 1)
+
+[node name="Identity" type="Control"]
+layout_mode = 3
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+grow_horizontal = 0
+grow_vertical = 2
+script = ExtResource("1_vb2bi")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -570.0
+offset_top = -215.0
+offset_right = -30.0
+offset_bottom = 215.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="EmailIdentitySection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="EmailSectionHeader" type="Label" parent="VBoxContainer/EmailIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Email Identity"
+
+[node name="EmailLine" type="LineEdit" parent="VBoxContainer/EmailIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_vqrn4")
+theme_override_styles/focus = ExtResource("2_7kx43")
+placeholder_text = "email"
+clear_button_enabled = true
+
+[node name="EmailPasswordLine" type="LineEdit" parent="VBoxContainer/EmailIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_vqrn4")
+theme_override_styles/focus = ExtResource("2_7kx43")
+placeholder_text = "password"
+secret = true
+clear_button_enabled = true
+
+[node name="EmailAttachButton" type="Button" parent="VBoxContainer/EmailIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_o47yt")
+theme_override_styles/hover = ExtResource("4_un3m7")
+theme_override_styles/pressed = ExtResource("5_uhi7e")
+theme_override_styles/focus = ExtResource("4_un3m7")
+text = "Attach New Email to User"
+
+[node name="EmailMergeButton" type="Button" parent="VBoxContainer/EmailIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_o47yt")
+theme_override_styles/hover = ExtResource("4_un3m7")
+theme_override_styles/pressed = ExtResource("5_uhi7e")
+theme_override_styles/focus = ExtResource("4_un3m7")
+text = "Merge User with Existing Email"
+
+[node name="UniversalIdentitySection" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="UniversalSectionHeader" type="Label" parent="VBoxContainer/UniversalIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Universal Identity"
+
+[node name="UserIDLine" type="LineEdit" parent="VBoxContainer/UniversalIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_vqrn4")
+theme_override_styles/focus = ExtResource("2_7kx43")
+placeholder_text = "universal ID"
+clear_button_enabled = true
+
+[node name="UniversalPasswordLine" type="LineEdit" parent="VBoxContainer/UniversalIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_vqrn4")
+theme_override_styles/focus = ExtResource("2_7kx43")
+placeholder_text = "password"
+secret = true
+clear_button_enabled = true
+
+[node name="UniversalAttachButton" type="Button" parent="VBoxContainer/UniversalIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_o47yt")
+theme_override_styles/hover = ExtResource("4_un3m7")
+theme_override_styles/pressed = ExtResource("5_uhi7e")
+theme_override_styles/focus = ExtResource("4_un3m7")
+text = "Attach New Universal ID to User"
+
+[node name="UniversalMergeButton" type="Button" parent="VBoxContainer/UniversalIdentitySection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_o47yt")
+theme_override_styles/hover = ExtResource("4_un3m7")
+theme_override_styles/pressed = ExtResource("5_uhi7e")
+theme_override_styles/focus = ExtResource("4_un3m7")
+text = "Merge User with Existing Universal ID"

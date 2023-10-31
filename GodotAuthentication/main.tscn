@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3 uid="uid://bp5kxul72qcbf"]
+
+[ext_resource type="Script" path="res://Main.cs" id="1_lg0b6"]
+[ext_resource type="Texture2D" uid="uid://c0h0v3c11i5w6" path="res://LogoBrainCloud.png" id="2_qiat5"]
+
+[node name="Main" type="Node"]
+script = ExtResource("1_lg0b6")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.117647, 0.117647, 0.117647, 1)
+
+[node name="BrainCloudLogo" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(550, 75)
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -275.0
+offset_right = 275.0
+offset_bottom = 75.0
+grow_horizontal = 2
+size_flags_horizontal = 4
+texture = ExtResource("2_qiat5")
+expand_mode = 1

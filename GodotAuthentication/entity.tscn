@@ -1,0 +1,106 @@
+[gd_scene load_steps=8 format=3 uid="uid://bnlhxyeoht7d4"]
+
+[ext_resource type="StyleBox" uid="uid://dni1ghgmpoo3g" path="res://Resources/line_edit_style_box.tres" id="1_63f5p"]
+[ext_resource type="Script" path="res://Entity.cs" id="1_p7scw"]
+[ext_resource type="StyleBox" uid="uid://c6sxc74yse72e" path="res://Resources/line_edit_style_box_focus.tres" id="2_p85we"]
+[ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="3_rotw8"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="4_tg8vl"]
+[ext_resource type="StyleBox" uid="uid://rrxwnim06xpk" path="res://Resources/delete_button_style_box.tres" id="5_b6s0x"]
+[ext_resource type="StyleBox" uid="uid://ekj2c0je2hyw" path="res://Resources/delete_button_style_box_focus.tres" id="6_x3e3a"]
+
+[node name="Entity" type="Control"]
+layout_mode = 3
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+grow_horizontal = 0
+grow_vertical = 2
+script = ExtResource("1_p7scw")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -380.0
+offset_top = -164.5
+offset_right = -27.0
+offset_bottom = 164.5
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="IDLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Entity ID"
+
+[node name="IDValue" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "00000000-0000-0000-0000-000000000000"
+
+[node name="TypeLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Entity Type"
+
+[node name="TypeValue" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "user"
+alignment = 1
+
+[node name="ProfileFIeldsLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Profile Fields"
+
+[node name="ProfileFieldsHBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="NameLine" type="LineEdit" parent="VBoxContainer/ProfileFieldsHBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_63f5p")
+theme_override_styles/focus = ExtResource("2_p85we")
+placeholder_text = "Name"
+
+[node name="AgeLine" type="LineEdit" parent="VBoxContainer/ProfileFieldsHBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_63f5p")
+theme_override_styles/focus = ExtResource("2_p85we")
+placeholder_text = "Age"
+
+[node name="ButtonsVBoxContainer" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="CreateButton" type="Button" parent="VBoxContainer/ButtonsVBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("3_rotw8")
+theme_override_styles/hover = ExtResource("4_tg8vl")
+theme_override_styles/focus = ExtResource("4_tg8vl")
+text = "CREATE ENTITY"
+
+[node name="UpdateButton" type="Button" parent="VBoxContainer/ButtonsVBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("3_rotw8")
+theme_override_styles/hover = ExtResource("4_tg8vl")
+theme_override_styles/focus = ExtResource("4_tg8vl")
+text = "UPDATE ENTITY"
+
+[node name="DeleteButton" type="Button" parent="VBoxContainer/ButtonsVBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("5_b6s0x")
+theme_override_styles/hover = ExtResource("6_x3e3a")
+theme_override_styles/focus = ExtResource("6_x3e3a")
+text = "DELETE ENTITY"
