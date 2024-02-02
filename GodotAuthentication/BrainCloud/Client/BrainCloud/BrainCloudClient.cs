@@ -21,6 +21,7 @@ namespace BrainCloud
     using System.Text;
 #else
 using System.Globalization;
+    using Godot;
 #endif
 
     #region Enums
@@ -1312,7 +1313,9 @@ using System.Globalization;
                     }
                     else
                     {
-#if !(DOT_NET || GODOT)
+#if GODOT
+                        GD.Print(formattedLog);
+#elif !DOT_NET
                         Debug.Log(formattedLog);
 #elif !XAMARIN
                         Console.WriteLine(formattedLog);

@@ -4,7 +4,7 @@ using GodotPlugins.Game;
 using System;
 
 public partial class Identity : Control
-{
+{    
     [Signal]
     public delegate void AttachEmailIdentityRequestedEventHandler();
 
@@ -78,7 +78,7 @@ public partial class Identity : Control
 
         if(!FieldsAreEmpty(email, password))
         {
-            _brainCloud.RequestEmailIdentityAttach(email, password);
+            _brainCloud.AttachEmailIdentity(email, password);
         }
     }
 
@@ -89,7 +89,7 @@ public partial class Identity : Control
 
         if (!FieldsAreEmpty(email, password))
         {
-            _brainCloud.RequestEmailIdentityMerge(email, password);
+            _brainCloud.MergeEmailIdentity(email, password);
         }
     }
 
@@ -100,7 +100,7 @@ public partial class Identity : Control
 
         if (!FieldsAreEmpty(universalID, password))
         {
-            _brainCloud.RequestUniversalIdentityAttach(universalID, password);
+            _brainCloud.AttachUniversalIdentity(universalID, password);
         }
     }
 
@@ -111,7 +111,7 @@ public partial class Identity : Control
 
         if (!FieldsAreEmpty(universalID, password))
         {
-            _brainCloud.RequestUniversalIdentityMerge(universalID, password);
+            _brainCloud.MergeUniversalIdentity(universalID, password);
         }
     }
 

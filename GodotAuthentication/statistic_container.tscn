@@ -1,0 +1,44 @@
+[gd_scene load_steps=4 format=3 uid="uid://ci36ayu2665pg"]
+
+[ext_resource type="Script" path="res://StatisticContainer.cs" id="1_0vwvn"]
+[ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="1_fkcgp"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="2_1i6kh"]
+
+[node name="StatisticContainer" type="HBoxContainer"]
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -21.0
+offset_bottom = 21.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+script = ExtResource("1_0vwvn")
+
+[node name="GlobalStatisticLine" type="LineEdit" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 24
+text = "PLAYER_COUNT"
+editable = false
+expand_to_text_length = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="StatValueLine" type="LineEdit" parent="HBoxContainer"]
+custom_minimum_size = Vector2(137, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+editable = false
+
+[node name="IncrementButton" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_fkcgp")
+theme_override_styles/hover = ExtResource("2_1i6kh")
+theme_override_styles/focus = ExtResource("2_1i6kh")
+text = "INCREMENT"

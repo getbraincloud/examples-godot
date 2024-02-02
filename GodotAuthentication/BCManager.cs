@@ -9,6 +9,8 @@ using System.Runtime.Intrinsics.X86;
 public partial class BCManager : Node
 {
     [Signal]
+    public delegate void BrainCloudLogReceivedEventHandler(string brainCloudLog);
+    [Signal]
     public delegate void AuthenticationSuccessEventHandler();
     [Signal]
     public delegate void AuthenticationFailureEventHandler();
@@ -32,20 +34,23 @@ public partial class BCManager : Node
     public delegate void UpdateEntitySuccessEventHandler();
     [Signal]
     public delegate void DeleteEntitySuccessEventHandler();
+    [Signal]
+    public delegate void ReceivedStatisticsEventHandler(Dictionary statistics);
 
     private BrainCloudWrapper _brainCloudWrapper;
 
     // TODO:  replace these values with the IDs from your app
-    private string _url = "https://api.braincloudservers.com/dispatcherv2";
-    private string _secretKey = "AppSecret";
-    private string _appId = "AppID";
-    private string _version = "1.0.0";
+    //private string _url = "";
+    //private string _secretKey = "";
+    //private string _appId = "";
+    //private string _version = "";
 
     public override void _Ready()
     {
         _brainCloudWrapper = new BrainCloudWrapper();
 
-        _brainCloudWrapper.Init(_url, _secretKey, _appId, _version);
+        // TODO:  replace these values with the IDs from your app
+        //_brainCloudWrapper.Init(_url, _secretKey, _appId, _version);
 
         _brainCloudWrapper.Client.EnableLogging(true);
 
@@ -59,16 +64,21 @@ public partial class BCManager : Node
 
     // Authentication Service
 
+    public bool IsAuthenticated()
+    {
+        return _brainCloudWrapper.Client.Authenticated;
+    }
+
     public void RequestAnonymousAuthentication()
     {
         SuccessCallback successCallback = (response, cbObject) =>
-        {
-            GD.Print(string.Format("[AuthenticateAnonymous Success] {0}", response));
+        {           
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[AuthenticateAnonymous Success]\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.AuthenticationSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("[AuthenticateAnonymous Failed] {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[AuthenticateAnonymous Failed] {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.AuthenticationFailure);
         };
 
@@ -80,12 +90,12 @@ public partial class BCManager : Node
         bool forceCreate = true;
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("[AuthenticateUniversal Success] {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[AuthenticateUniversal Success]\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.AuthenticationSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("[AuthenticateUniversal Failed] {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[AuthenticateUniversal Failed] {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.AuthenticationFailure);
         };
 
@@ -98,12 +108,12 @@ public partial class BCManager : Node
 
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("[AuthenticateEmailPassword Success] {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[AuthenticateEmailPassword Success]\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.AuthenticationSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("[AuthenticateEmailPassword Failed] {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[AuthenticateEmailPassword Failed] {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.AuthenticationFailure);
         };
         _brainCloudWrapper.AuthenticateEmailPassword(email, password, forceCreate, successCallback, failureCallback);
@@ -111,16 +121,16 @@ public partial class BCManager : Node
 
     // Player State Service
 
-    public void RequestLogOut()
+    public void LogOut()
     {
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Logout Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Logout Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.LogOutSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Logout Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Logout Failed | {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.LogOutFailure);
         };
 
@@ -129,64 +139,64 @@ public partial class BCManager : Node
 
     // Identity Service
 
-    public void RequestEmailIdentityAttach(string email, string password)
+    public void AttachEmailIdentity(string email, string password)
     {
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Attach Email Identity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Attach Email Identity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.IdentityAttachSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Attach Email Identity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Attach Email Identity Failed | {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.IdentityAttachFailure);
         };
 
         _brainCloudWrapper.IdentityService.AttachEmailIdentity(email, password, successCallback, failureCallback);
     }
 
-    public void RequestEmailIdentityMerge(string email, string password)
+    public void MergeEmailIdentity(string email, string password)
     {
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Merge Email Identity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Merge Email Identity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.IdentityMergeSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Merge Email Identity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Merge Email Identity Failed | {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.IdentityMergeFailure);
         };
 
         _brainCloudWrapper.IdentityService.MergeEmailIdentity(email, password, successCallback, failureCallback);
     }
 
-    public void RequestUniversalIdentityAttach(string universalID, string password)
+    public void AttachUniversalIdentity(string universalID, string password)
     {
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Attach Universal Identity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Attach Universal Identity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.IdentityAttachSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Attach Universal Identity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Attach Universal Identity Failed | {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.IdentityAttachFailure);
         };
 
         _brainCloudWrapper.IdentityService.AttachUniversalIdentity(universalID, password, successCallback, failureCallback);
     }
 
-    public void RequestUniversalIdentityMerge(string universalID, string password)
+    public void MergeUniversalIdentity(string universalID, string password)
     {
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Merge Universal Identity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Merge Universal Identity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.IdentityMergeSuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Merge Universal Identity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Merge Universal Identity Failed | {0}  {1}  {2}", status, code, error));
             EmitSignal(SignalName.IdentityMergeFailure);
         };
 
@@ -195,13 +205,13 @@ public partial class BCManager : Node
 
     // Entity Service
 
-    public void RequestEntityGetPage()
+    public void GetPage()
     {
         string context = "{\"pagination\":{\"rowsPerPage\":50,\"pageNumber\":1},\"searchCriteria\":{\"entityType\":\"user\"},\"sortCriteria\":{\"createdAt\":1,\"updatedAt\":-1}}";
         
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Entity.GetPage Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Entity.GetPage Success\n{0}", Json.Stringify(response)));
 
             Dictionary responseJson = (Dictionary)Json.ParseString(response);
             Dictionary data = (Dictionary)responseJson["data"];
@@ -217,60 +227,177 @@ public partial class BCManager : Node
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Entity.GetPage Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Entity.GetPage Failed | {0}  {1}  {2}", status, code, error));
         };
 
         _brainCloudWrapper.EntityService.GetPage(context, successCallback, failureCallback);
     }
 
-    public void RequestCreateEntity(string entityType, string jsonEntityData, string jsonEntityAcl)
+    public void CreateEntity(string entityType, string jsonEntityData, string jsonEntityAcl)
     {        
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Create Entity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Create Entity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.CreateEntitySuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Create Entity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Create Entity Failed | {0}  {1}  {2}", status, code, error));
         };
 
         _brainCloudWrapper.EntityService.CreateEntity(entityType, jsonEntityData, jsonEntityAcl, successCallback, failureCallback);
     }
 
-    public void RequestUpdateEntity(string entityId, string entityType, string jsonEntityData, string jsonEntityAcl)
+    public void UpdateEntity(string entityId, string entityType, string jsonEntityData, string jsonEntityAcl)
     {
         // The version of the entity to delete. Use - 1 to indicate the newest version
         int version = -1;
 
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Update Entity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Update Entity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.UpdateEntitySuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Update Entity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Update Entity Failed | {0}  {1}  {2}", status, code, error));
         };
 
         _brainCloudWrapper.EntityService.UpdateEntity(entityId, entityType, jsonEntityData, jsonEntityAcl, version, successCallback, failureCallback);
     }
 
-    public void RequestDeleteEntity(string entityId)
+    public void DeleteEntity(string entityId)
     {
         // The version of the entity to delete. Use - 1 to indicate the newest version
         int version = -1;
 
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Delete Entity Success | {0}", response));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Delete Entity Success\n{0}", Json.Stringify(response)));
             EmitSignal(SignalName.DeleteEntitySuccess);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Delete Entity Failed | {0}  {1}  {2}", status, code, error));
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("Delete Entity Failed | {0}  {1}  {2}", status, code, error));
         };
 
         _brainCloudWrapper.EntityService.DeleteEntity(entityId, version, successCallback, failureCallback);
     }
+
+    // Script Service
+
+    public void RunScript(string scriptName, string scriptData)
+    {
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("RunScript Success | {0}", response));
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("RunScript Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloudWrapper.ScriptService.RunScript(scriptName, scriptData, successCallback, failureCallback);
+    }
+
+    // Global Statistics Service
+
+    public void ReadAllGlobalStats()
+    {
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("Read All Global Stats Success | {0}", response));
+
+            Dictionary responseJson = (Dictionary)Json.ParseString(response);
+            Dictionary data = (Dictionary)responseJson["data"];
+            Dictionary statistics = (Dictionary)data["statistics"];
+
+            EmitSignal(SignalName.ReceivedStatistics, statistics);
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("Read All Global Stats Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloudWrapper.GlobalStatisticsService.ReadAllGlobalStats(successCallback, failureCallback);
+    }
+
+    public void IncrementGlobalStatistics(string globalStatName, int incrementAmount)
+    {
+        Dictionary statisticsJson = new Dictionary();
+        statisticsJson.Add(globalStatName, incrementAmount);
+
+        string statistics = Json.Stringify(statisticsJson);
+
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("Increment Global Statistics Success | {0}", response));
+
+            ReadAllGlobalStats();
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("Increment Global Statistics Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloudWrapper.GlobalStatisticsService.IncrementGlobalStats(statistics, successCallback, failureCallback);
+    }
+
+    // Player Statistics Service
+
+    public void ReadAllPlayerStats()
+    {
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("Read All Player Stats Success | {0}", response));
+
+            Dictionary responseJson = (Dictionary)Json.ParseString(response);
+            Dictionary data = (Dictionary)responseJson["data"];
+            Dictionary statistics = (Dictionary)data["statistics"];
+
+            EmitSignal(SignalName.ReceivedStatistics, statistics);
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("Read All Global Stats Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloudWrapper.PlayerStatisticsService.ReadAllUserStats(successCallback, failureCallback);
+    }
+
+    public void IncrementPlayerStatistics(string playerStatName, int incrementAmount)
+    {
+        Dictionary statisticsJson = new Dictionary();
+        statisticsJson.Add(playerStatName, incrementAmount);
+
+        string statistics = Json.Stringify(statisticsJson);
+
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("Increment Player Statistics Success | {0}", response));
+
+            ReadAllPlayerStats();
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("Increment Player Statistics Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloudWrapper.PlayerStatisticsService.IncrementUserStats(statistics, successCallback, failureCallback);
+    }
+
+    public void IncrementExperiencePoints(int xpValue)
+    {
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("Increment Experience Points Success | {0}", response));
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("Increment Experience Points Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloudWrapper.PlayerStatisticsService.IncrementExperiencePoints(xpValue, successCallback, failureCallback);
+    }
+
 }

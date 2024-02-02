@@ -86,7 +86,7 @@ public partial class MainMenu : Control
 
     private void OnLogOutButtonPressed()
     {
-        _brainCloud.RequestLogOut();
+        _brainCloud.LogOut();
     }
 
     private void OnLogOutSuccess()

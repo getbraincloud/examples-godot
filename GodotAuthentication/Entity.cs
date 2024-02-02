@@ -91,7 +91,7 @@ public partial class Entity : Control
     private void GetEntities()
     {
         GD.Print("Searching for entities . . .");
-        _brainCloud.RequestEntityGetPage();
+        _brainCloud.GetPage();
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public partial class Entity : Control
     {
         if (CreateNewEntityData())
         {
-            _brainCloud.RequestCreateEntity(_entityType, _newEntityData, _acl);
+            _brainCloud.CreateEntity(_entityType, _newEntityData, _acl);
         }
     }
 
@@ -148,13 +148,13 @@ public partial class Entity : Control
     {
         if (CreateNewEntityData())
         {
-            _brainCloud.RequestUpdateEntity(_entityID, _entityType, _newEntityData, _acl);
+            _brainCloud.UpdateEntity(_entityID, _entityType, _newEntityData, _acl);
         }
     }
 
     private void OnDeleteButtonPressed()
     {
-        _brainCloud.RequestDeleteEntity(_entityID);
+        _brainCloud.DeleteEntity(_entityID);
     }
 
     private void OnCreateEntitySuccess()
