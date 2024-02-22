@@ -1,4 +1,3 @@
-using BrainCloud.UnityWebSocketsForWebGL.WebSocketSharp;
 using Godot;
 using System;
 
@@ -93,7 +92,7 @@ public partial class AuthenticationMenu : Control
                 _brainCloud.RequestAnonymousAuthentication();
                 break;
             case 1:
-                if(!(userID.IsNullOrEmpty() || password.IsNullOrEmpty()))
+                if(!(string.IsNullOrEmpty(userID) || string.IsNullOrEmpty(password)))
                 {
                     _brainCloud.RequestUniversalAuthentication(userID, password);
                     break;
@@ -102,7 +101,7 @@ public partial class AuthenticationMenu : Control
                 DisplayAuthenticationMessage("Please fill in empty fields");
                 break;
             case 2:
-                if (!(userID.IsNullOrEmpty() || password.IsNullOrEmpty()))
+                if (!(string.IsNullOrEmpty(userID) || string.IsNullOrEmpty(password)))
                 {
                     _brainCloud.RequestEmailPasswordAuthentication(userID, password);
                     break;

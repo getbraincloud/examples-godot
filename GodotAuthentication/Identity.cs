@@ -1,4 +1,3 @@
-using BrainCloud.UnityWebSocketsForWebGL.WebSocketSharp;
 using Godot;
 using GodotPlugins.Game;
 using System;
@@ -53,7 +52,7 @@ public partial class Identity : Control
     {
         GD.Print("Checking for empty fields . . .");
 
-        if(userID.IsNullOrEmpty() || password.IsNullOrEmpty())
+        if(string.IsNullOrEmpty(userID) || string.IsNullOrEmpty(password))
         {
             GD.Print("One or more fields were empty");
 

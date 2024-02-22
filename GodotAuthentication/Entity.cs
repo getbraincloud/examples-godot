@@ -1,5 +1,4 @@
 using BrainCloud.Common;
-using BrainCloud.UnityWebSocketsForWebGL.WebSocketSharp;
 using Godot;
 using Godot.Collections;
 using System;
@@ -102,7 +101,7 @@ public partial class Entity : Control
     {
         string name = _nameField.Text;
         string age = _ageField.Text;
-        if (name.IsNullOrEmpty() || age.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(age))
         {
             GD.Print("Please fill in empty fields");
 
