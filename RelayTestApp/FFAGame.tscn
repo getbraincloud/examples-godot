@@ -1,0 +1,50 @@
+[gd_scene load_steps=3 format=3 uid="uid://orbrj6s3ccot"]
+
+[ext_resource type="Script" path="res://FFAGame.cs" id="1_e8o8v"]
+[ext_resource type="Texture2D" uid="uid://b0vxwbitynijm" path="res://icon.svg" id="2_ldnbs"]
+
+[node name="FFAGame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_e8o8v")
+
+[node name="GameScreen" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameInfo" type="MarginContainer" parent="GameScreen"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerInfo" type="VBoxContainer" parent="GameScreen/GameInfo"]
+layout_mode = 2
+
+[node name="PlayersLabel" type="Label" parent="GameScreen/GameInfo/PlayerInfo"]
+layout_mode = 2
+text = "Players"
+
+[node name="PlayersContainer" type="VBoxContainer" parent="GameScreen/GameInfo/PlayerInfo"]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="Game" type="MarginContainer" parent="GameScreen"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_right = 20
+
+[node name="TextureRect" type="TextureRect" parent="GameScreen/Game"]
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("2_ldnbs")
+expand_mode = 1
+stretch_mode = 1

@@ -11,12 +11,19 @@ config_version=5
 [application]
 
 config/name="RelayTestApp"
+run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.1", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [autoload]
 
-BCManager="*res://BrainCloudManager.cs"
+BCManager="*res://BCManager.cs"
+GameManager="*res://GameManager.cs"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 
 [dotnet]
 
