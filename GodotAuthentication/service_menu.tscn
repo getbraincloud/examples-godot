@@ -1,38 +1,39 @@
-[gd_scene load_steps=7 format=3 uid="uid://cgmuuj82v6oji"]
+[gd_scene load_steps=4 format=3 uid="uid://cgmuuj82v6oji"]
 
 [ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="1_bxl6b"]
 [ext_resource type="Script" path="res://ServiceMenu.cs" id="1_musxp"]
 [ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="2_35whi"]
-[ext_resource type="StyleBox" uid="uid://dhlabfpkciae2" path="res://Resources/secondary_button_style_box.tres" id="3_352ln"]
-[ext_resource type="StyleBox" uid="uid://bhu5v0bt41yy4" path="res://Resources/secondary_button_style_box_focus.tres" id="4_c7dv2"]
-[ext_resource type="StyleBox" uid="uid://ekj2c0je2hyw" path="res://Resources/delete_button_style_box_focus.tres" id="4_wu5op"]
 
 [node name="ServiceMenu" type="Control"]
 layout_mode = 3
-anchors_preset = 4
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
+anchor_right = 0.5
 anchor_bottom = 0.5
+grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_musxp")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
-anchors_preset = 4
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 20.0
-offset_top = -100.0
-offset_right = 321.0
-offset_bottom = 282.0
+offset_left = -113.0
+offset_top = -139.0
+offset_right = 113.0
+offset_bottom = 139.0
+grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
 
 [node name="IdentityServiceButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = ExtResource("1_bxl6b")
 theme_override_styles/hover = ExtResource("2_35whi")
-theme_override_styles/pressed = ExtResource("4_wu5op")
 theme_override_styles/focus = ExtResource("2_35whi")
 text = "IDENTITY"
 
@@ -41,47 +42,53 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 24
 theme_override_styles/normal = ExtResource("1_bxl6b")
 theme_override_styles/hover = ExtResource("2_35whi")
-theme_override_styles/pressed = ExtResource("4_wu5op")
 theme_override_styles/focus = ExtResource("2_35whi")
 text = "ENTITY"
-
-[node name="CustomEntityServiceButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-disabled = true
-text = "Coming Soon"
-
-[node name="GlobalStatisticsServiceButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-disabled = true
-text = "Coming Soon"
-
-[node name="PlayerStatisticsServiceButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-disabled = true
-text = "Coming Soon"
 
 [node name="ScriptServiceButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-disabled = true
-text = "Coming Soon"
+theme_override_styles/normal = ExtResource("1_bxl6b")
+theme_override_styles/hover = ExtResource("2_35whi")
+theme_override_styles/focus = ExtResource("2_35whi")
+text = "SCRIPT"
+
+[node name="GlobalStatisticsServiceButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_bxl6b")
+theme_override_styles/hover = ExtResource("2_35whi")
+theme_override_styles/focus = ExtResource("2_35whi")
+text = "GLOBAL STATISTICS"
+
+[node name="PlayerStatisticsServiceButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_bxl6b")
+theme_override_styles/hover = ExtResource("2_35whi")
+theme_override_styles/focus = ExtResource("2_35whi")
+text = "PLAYER STATISTICS"
+
+[node name="XPServiceButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_bxl6b")
+theme_override_styles/hover = ExtResource("2_35whi")
+theme_override_styles/focus = ExtResource("2_35whi")
+text = "XP"
 
 [node name="VirtualCurrencyServiceButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-disabled = true
-text = "Coming Soon"
-
-[node name="LogOutButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = ExtResource("3_352ln")
-theme_override_styles/hover = ExtResource("4_c7dv2")
-theme_override_styles/focus = ExtResource("4_c7dv2")
-text = "LOG OUT"
+theme_override_styles/normal = ExtResource("1_bxl6b")
+theme_override_styles/hover = ExtResource("2_35whi")
+theme_override_styles/focus = ExtResource("2_35whi")
+text = "VIRTUAL CURRENCY"
 
 [connection signal="pressed" from="VBoxContainer/IdentityServiceButton" to="." method="OnButtonPressed" binds= [0]]
 [connection signal="pressed" from="VBoxContainer/EntityServiceButton" to="." method="OnButtonPressed" binds= [1]]
+[connection signal="pressed" from="VBoxContainer/ScriptServiceButton" to="." method="OnButtonPressed" binds= [2]]
+[connection signal="pressed" from="VBoxContainer/GlobalStatisticsServiceButton" to="." method="OnButtonPressed" binds= [3]]
+[connection signal="pressed" from="VBoxContainer/PlayerStatisticsServiceButton" to="." method="OnButtonPressed" binds= [4]]
+[connection signal="pressed" from="VBoxContainer/XPServiceButton" to="." method="OnButtonPressed" binds= [5]]
+[connection signal="pressed" from="VBoxContainer/VirtualCurrencyServiceButton" to="." method="OnButtonPressed" binds= [6]]

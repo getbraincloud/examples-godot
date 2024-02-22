@@ -1,0 +1,130 @@
+[gd_scene load_steps=6 format=3 uid="uid://ekc1wuf71pd6"]
+
+[ext_resource type="Script" path="res://VirtualCurrency.cs" id="1_1hbvi"]
+[ext_resource type="StyleBox" uid="uid://dni1ghgmpoo3g" path="res://Resources/line_edit_style_box.tres" id="1_n80ss"]
+[ext_resource type="StyleBox" uid="uid://c6sxc74yse72e" path="res://Resources/line_edit_style_box_focus.tres" id="2_ttdjo"]
+[ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="3_rrt4u"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="4_o1jcy"]
+
+[node name="VirtualCurrency" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1hbvi")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -223.0
+offset_top = -86.0
+offset_right = 223.0
+offset_bottom = 86.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Labels" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 4
+
+[node name="ConsumedLabel" type="Label" parent="VBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Consumed"
+
+[node name="ConsumedLine" type="LineEdit" parent="VBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_n80ss")
+theme_override_styles/focus = ExtResource("2_ttdjo")
+text = "0"
+
+[node name="PurchasedLabel" type="Label" parent="VBoxContainer/Labels"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Purchased"
+
+[node name="PurchasedLine" type="LineEdit" parent="VBoxContainer/Labels"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_n80ss")
+theme_override_styles/focus = ExtResource("2_ttdjo")
+text = "0"
+
+[node name="BalanceLabel" type="Label" parent="VBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Balance"
+
+[node name="BalanceLine" type="LineEdit" parent="VBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_n80ss")
+theme_override_styles/focus = ExtResource("2_ttdjo")
+text = "0"
+
+[node name="AwardedLabel" type="Label" parent="VBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Awarded"
+
+[node name="AwardedLine" type="LineEdit" parent="VBoxContainer/Labels"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_n80ss")
+theme_override_styles/focus = ExtResource("2_ttdjo")
+text = "0"
+
+[node name="Actions" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="AwardLine" type="LineEdit" parent="VBoxContainer/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_n80ss")
+theme_override_styles/focus = ExtResource("2_ttdjo")
+placeholder_text = "Award Amount"
+
+[node name="AwardButton" type="Button" parent="VBoxContainer/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("3_rrt4u")
+theme_override_styles/hover = ExtResource("4_o1jcy")
+theme_override_styles/focus = ExtResource("4_o1jcy")
+text = "AWARD GEMS"
+
+[node name="ConsumeLine" type="LineEdit" parent="VBoxContainer/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("1_n80ss")
+theme_override_styles/focus = ExtResource("2_ttdjo")
+placeholder_text = "Consume Amount"
+
+[node name="ConsumeButton" type="Button" parent="VBoxContainer/Actions"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = ExtResource("3_rrt4u")
+theme_override_styles/hover = ExtResource("4_o1jcy")
+theme_override_styles/focus = ExtResource("4_o1jcy")
+text = "CONSUME GEMS"

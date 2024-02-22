@@ -1,5 +1,4 @@
 using BrainCloud.Common;
-using BrainCloud.UnityWebSocketsForWebGL.WebSocketSharp;
 using Godot;
 using Godot.Collections;
 using System;
@@ -91,7 +90,7 @@ public partial class Entity : Control
     private void GetEntities()
     {
         GD.Print("Searching for entities . . .");
-        _brainCloud.RequestEntityGetPage();
+        _brainCloud.GetPage();
     }
 
     /// <summary>
@@ -102,7 +101,7 @@ public partial class Entity : Control
     {
         string name = _nameField.Text;
         string age = _ageField.Text;
-        if (name.IsNullOrEmpty() || age.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(age))
         {
             GD.Print("Please fill in empty fields");
 
@@ -140,7 +139,7 @@ public partial class Entity : Control
     {
         if (CreateNewEntityData())
         {
-            _brainCloud.RequestCreateEntity(_entityType, _newEntityData, _acl);
+            _brainCloud.CreateEntity(_entityType, _newEntityData, _acl);
         }
     }
 
@@ -148,13 +147,13 @@ public partial class Entity : Control
     {
         if (CreateNewEntityData())
         {
-            _brainCloud.RequestUpdateEntity(_entityID, _entityType, _newEntityData, _acl);
+            _brainCloud.UpdateEntity(_entityID, _entityType, _newEntityData, _acl);
         }
     }
 
     private void OnDeleteButtonPressed()
     {
-        _brainCloud.RequestDeleteEntity(_entityID);
+        _brainCloud.DeleteEntity(_entityID);
     }
 
     private void OnCreateEntitySuccess()

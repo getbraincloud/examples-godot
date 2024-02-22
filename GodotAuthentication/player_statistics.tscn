@@ -1,0 +1,130 @@
+[gd_scene load_steps=2 format=3 uid="uid://vigbicelfv11"]
+
+[sub_resource type="CSharpScript" id="CSharpScript_vbhfr"]
+script/source = "using Godot;
+using Godot.Collections;
+using System;
+
+public partial class Statistic : VBoxContainer
+{
+    private VBoxContainer _statisticsContainers;
+    private Label _errorMsg;
+
+    private BCManager _brainCloud;
+
+    private bool _isGlobalStatistic;
+
+    public override void _Ready()
+    {
+        _statisticsContainers = GetNode<VBoxContainer>(\"ScrollContainer/StatisticsContainers\");
+        _errorMsg = GetNode<Label>(\"ErrorMsg\");
+
+        _brainCloud = GetNode<BCManager>(\"/root/BCManager\");
+
+        _errorMsg.Hide();
+
+        _brainCloud.Connect(BCManager.SignalName.ReceivedGlobalStatistics, new Callable(this, MethodName.RefreshStatistics));
+
+        _brainCloud.ReadAllGlobalStats();
+    }
+
+    public void SetStatisticType(bool isGlobalStatistic)
+    {
+        _isGlobalStatistic = isGlobalStatistic;
+    }
+
+    private void RefreshStatistics(Dictionary statistics)
+    {
+        _errorMsg.Hide();
+
+        if (_statisticsContainers.GetChildCount() > 0)
+        {
+            for (int i = 0; i < _statisticsContainers.GetChildCount(); i++)
+            {
+                _statisticsContainers.RemoveChild(_statisticsContainers.GetChild(i));
+            }
+        }
+        if (statistics.Keys.Count > 0)
+        {
+            foreach (var key in statistics.Keys)
+            {
+                string statisticName = key.ToString();
+                int statisticValue = (int)statistics[key];
+
+                var statisticsContainer = GD.Load<PackedScene>(\"res://statistic_container.tscn\");
+
+                StatisticContainer statistic = (StatisticContainer)statisticsContainer.Instantiate();
+
+                _statisticsContainers.AddChild(statistic);
+
+                statistic.SetStatisticName(statisticName);
+                statistic.SetStatisticValue(statisticValue);
+                
+                statistic.Connect(StatisticContainer.SignalName.StatisticIncremented, new Callable(this, MethodName.OnStatisticIncremented));
+            }
+        }
+
+        else
+        {
+            _errorMsg.Show();
+            GD.Print(\"No Statistics found\");
+        }
+    }
+
+    private void OnStatisticIncremented(string statisticName, int incrementAmount)
+    {
+        if (_isGlobalStatistic)
+        {
+            _brainCloud.IncrementGlobalStatistics(statisticName, incrementAmount);
+        }
+
+        else
+        {
+            //_brainCloud.IncrementPlayerStatistics(statisticName, incrementAmount);
+        }
+    }
+}
+"
+
+[node name="PlayerStatistics" type="VBoxContainer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -236.0
+offset_top = -35.5
+offset_right = 236.0
+offset_bottom = 35.5
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("CSharpScript_vbhfr")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+custom_minimum_size = Vector2(472, 0)
+layout_mode = 2
+
+[node name="StatisticHeader" type="Label" parent="HBoxContainer"]
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Player Statistic"
+
+[node name="StatisticValueHeader" type="Label" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Value"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="StatisticsContainers" type="VBoxContainer" parent="ScrollContainer"]
+layout_mode = 2
+
+[node name="ErrorMsg" type="Label" parent="."]
+layout_mode = 2
+text = "No Player Statistics found."

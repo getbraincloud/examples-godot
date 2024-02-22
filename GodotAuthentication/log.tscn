@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3 uid="uid://cot63ql8xybk"]
+
+[ext_resource type="StyleBox" uid="uid://dni1ghgmpoo3g" path="res://Resources/line_edit_style_box.tres" id="1_gwq35"]
+[ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="2_yp1w0"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="3_1wpku"]
+
+[node name="Log" type="VBoxContainer"]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -94.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="LogField" type="RichTextLabel" parent="ScrollContainer"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/normal = ExtResource("1_gwq35")
+fit_content = true
+scroll_following = true
+
+[node name="ClearButton" type="Button" parent="."]
+layout_mode = 2
+theme_override_styles/normal = ExtResource("2_yp1w0")
+theme_override_styles/hover = ExtResource("3_1wpku")
+text = "CLEAR LOG"

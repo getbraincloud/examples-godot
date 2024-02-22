@@ -1,4 +1,3 @@
-using BrainCloud.UnityWebSocketsForWebGL.WebSocketSharp;
 using Godot;
 using System;
 
@@ -35,9 +34,6 @@ public partial class AuthenticationMenu : Control
         // Error message will be shown when needed
         _authenticationMenuMessage.Hide();
 
-        // Authenticate button should only be disabled 
-        _authenticateButton.Disabled = false;
-
         // Populate AuthenticationOptions dropdown options
         _authenticationOptions.AddItem("Anonymous");
         _authenticationOptions.AddItem("Universal");
@@ -56,8 +52,6 @@ public partial class AuthenticationMenu : Control
 
     private void OnAuthenticationOptionsItemSelected(int index)
     {
-        GD.Print("Authentication Type Selected: " + index);
-
         _userIDField.Clear();
         _passwordField.Clear();
 
@@ -85,7 +79,6 @@ public partial class AuthenticationMenu : Control
     private void OnAuthenticationRequested()
     {
         int authenticationType = _authenticationOptions.GetSelectedId();
-        GD.Print("Selected Authentication: " + authenticationType);
 
         string userID = _userIDField.Text;
         string password = _passwordField.Text;
@@ -99,7 +92,7 @@ public partial class AuthenticationMenu : Control
                 _brainCloud.RequestAnonymousAuthentication();
                 break;
             case 1:
-                if(!(userID.IsNullOrEmpty() || password.IsNullOrEmpty()))
+                if(!(string.IsNullOrEmpty(userID) || string.IsNullOrEmpty(password)))
                 {
                     _brainCloud.RequestUniversalAuthentication(userID, password);
                     break;
@@ -108,7 +101,7 @@ public partial class AuthenticationMenu : Control
                 DisplayAuthenticationMessage("Please fill in empty fields");
                 break;
             case 2:
-                if (!(userID.IsNullOrEmpty() || password.IsNullOrEmpty()))
+                if (!(string.IsNullOrEmpty(userID) || string.IsNullOrEmpty(password)))
                 {
                     _brainCloud.RequestEmailPasswordAuthentication(userID, password);
                     break;
@@ -129,6 +122,6 @@ public partial class AuthenticationMenu : Control
 
     private void OnAuthenticationFail()
     {
-        GD.Print("Authentication failed.");
+        GD.Print("OnAuthenticationFail()");
     }
 }

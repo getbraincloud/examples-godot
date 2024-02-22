@@ -1,10 +1,9 @@
-using BrainCloud.UnityWebSocketsForWebGL.WebSocketSharp;
 using Godot;
 using GodotPlugins.Game;
 using System;
 
 public partial class Identity : Control
-{
+{    
     [Signal]
     public delegate void AttachEmailIdentityRequestedEventHandler();
 
@@ -53,7 +52,7 @@ public partial class Identity : Control
     {
         GD.Print("Checking for empty fields . . .");
 
-        if(userID.IsNullOrEmpty() || password.IsNullOrEmpty())
+        if(string.IsNullOrEmpty(userID) || string.IsNullOrEmpty(password))
         {
             GD.Print("One or more fields were empty");
 
@@ -78,7 +77,7 @@ public partial class Identity : Control
 
         if(!FieldsAreEmpty(email, password))
         {
-            _brainCloud.RequestEmailIdentityAttach(email, password);
+            _brainCloud.AttachEmailIdentity(email, password);
         }
     }
 
@@ -89,7 +88,7 @@ public partial class Identity : Control
 
         if (!FieldsAreEmpty(email, password))
         {
-            _brainCloud.RequestEmailIdentityMerge(email, password);
+            _brainCloud.MergeEmailIdentity(email, password);
         }
     }
 
@@ -100,7 +99,7 @@ public partial class Identity : Control
 
         if (!FieldsAreEmpty(universalID, password))
         {
-            _brainCloud.RequestUniversalIdentityAttach(universalID, password);
+            _brainCloud.AttachUniversalIdentity(universalID, password);
         }
     }
 
@@ -111,7 +110,7 @@ public partial class Identity : Control
 
         if (!FieldsAreEmpty(universalID, password))
         {
-            _brainCloud.RequestUniversalIdentityMerge(universalID, password);
+            _brainCloud.MergeUniversalIdentity(universalID, password);
         }
     }
 

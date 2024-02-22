@@ -1,30 +1,98 @@
-[gd_scene load_steps=3 format=3 uid="uid://bp5kxul72qcbf"]
+[gd_scene load_steps=5 format=3 uid="uid://dsw5wwr0vauou"]
 
 [ext_resource type="Script" path="res://Main.cs" id="1_lg0b6"]
 [ext_resource type="Texture2D" uid="uid://8k00k6iev4e2" path="res://brainCloud_Godot_logo_h_dark.png" id="2_w05l1"]
+[ext_resource type="StyleBox" uid="uid://crjikui4cijvj" path="res://Resources/button_style_box.tres" id="3_62clj"]
+[ext_resource type="StyleBox" uid="uid://ln7bs4uqfou6" path="res://Resources/button_style_box_focus.tres" id="4_0s6ua"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_lg0b6")
 
 [node name="ColorRect" type="ColorRect" parent="."]
+offset_right = 1024.0
+offset_bottom = 600.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.117647, 0.117647, 0.117647, 1)
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.117647, 0.117647, 0.117647, 1)
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
-[node name="BrainCloudLogo" type="TextureRect" parent="."]
-custom_minimum_size = Vector2(1024, 150)
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -512.0
-offset_top = 10.0
-offset_right = 512.0
-offset_bottom = 160.0
-grow_horizontal = 2
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_constants/separation = 30
+
+[node name="Logo" type="TextureRect" parent="MarginContainer/VBoxContainer/Header"]
+custom_minimum_size = Vector2(300, 100)
+layout_mode = 2
 size_flags_horizontal = 4
 texture = ExtResource("2_w05l1")
 expand_mode = 1
-stretch_mode = 5
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 6
+theme_override_font_sizes/font_size = 51
+text = "Welcome to brainCloud"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Content" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="CurrentService" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ServiceContainer" type="MarginContainer" parent="MarginContainer/VBoxContainer/Content/CurrentService"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/Content/CurrentService"]
+layout_mode = 2
+
+[node name="MenuButton" type="Button" parent="MarginContainer/VBoxContainer/Content/CurrentService/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = ExtResource("3_62clj")
+theme_override_styles/hover = ExtResource("4_0s6ua")
+text = "< Menu"
+
+[node name="LogOutButton" type="Button" parent="MarginContainer/VBoxContainer/Content/CurrentService/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = ExtResource("3_62clj")
+theme_override_styles/hover = ExtResource("4_0s6ua")
+text = "Log Out"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Content"]
+layout_mode = 2
+
+[node name="ServiceTitle" type="Label" parent="MarginContainer/VBoxContainer/Content/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 19
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/Content/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ServiceInfo" type="Label" parent="MarginContainer/VBoxContainer/Content/VBoxContainer/ScrollContainer"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+autowrap_mode = 3

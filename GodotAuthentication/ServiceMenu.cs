@@ -6,17 +6,17 @@ public partial class ServiceMenu : Control
     [Signal]
     public delegate void ServiceButtonPressedEventHandler(int buttonIndex);
 
-    private Button _customEntityServiceButton;
     private Button _entityServiceButton;
     private Button _gloablStatisticsServiceButton;
     private Button _identityServiceButton;
     private Button _playerStatisticsServiceButton;
     private Button _scriptServiceButton;
+    private Button _xpServiceButton;
     private Button _virtualCurrencyServiceButton;
 
     public override void _Ready()
     {
-        _customEntityServiceButton = GetNode<Button>("VBoxContainer/CustomEntityServiceButton");
+        _xpServiceButton = GetNode<Button>("VBoxContainer/XPServiceButton");
         _entityServiceButton = GetNode<Button>("VBoxContainer/EntityServiceButton");
         _gloablStatisticsServiceButton = GetNode<Button>("VBoxContainer/GlobalStatisticsServiceButton");
         _identityServiceButton = GetNode<Button>("VBoxContainer/IdentityServiceButton");
