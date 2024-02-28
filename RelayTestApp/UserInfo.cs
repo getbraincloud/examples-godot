@@ -19,7 +19,16 @@ public partial class UserInfo : Node
 
     public bool IsHost;
 
+    public bool AllowSendTo = true;
+
     public GameManager.TeamCodes Team;
+
+    public Vector2 MousePosition;
+    public List<Vector2> ShockwavePositions = new List<Vector2>();
+    public List<GameManager.TeamCodes> ShockwaveTeamCodes = new List<GameManager.TeamCodes>();
+    public List<GameManager.TeamCodes> InstigatorTeamCodes = new List<GameManager.TeamCodes>();
+
+    public Cursor UserCursor;
 
     public UserInfo() { }
 

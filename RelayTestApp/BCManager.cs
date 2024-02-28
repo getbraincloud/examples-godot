@@ -128,6 +128,18 @@ public partial class BCManager : Node
 		m_BrainCloud.LobbyService.UpdateReady(GameManager.Instance.CurrentLobby.LobbyID, GameManager.Instance.IsReady, extraJson);
 	}
 
+    public void SendRelayMessage(Dictionary<string, object> in_dict)
+    {
+        string jsonData = JsonWriter.Serialize(in_dict);
+        byte[] in_data = Encoding.ASCII.GetBytes(jsonData);
+        ulong to_netID = BrainCloudRelay.TO_ALL_PLAYERS;
+        bool in_reliable = true;
+        bool in_ordered = false;
+        int in_channel = 0;
+
+        m_BrainCloud.RelayService.Send(in_data, to_netID, in_reliable, in_ordered, in_channel);
+    }
+
 	private void HandlePlayerState(string jsonResponse, object cobject)
 	{
 		GD.Print("HandlePlayerState");
@@ -271,11 +283,12 @@ public partial class BCManager : Node
                     
                     break;
                 case "ROOM_READY":
+                    GD.Print("ROOM_READY");
                     GameManager.Instance.CurrentServer = new Server(jsonData);
                     // TODO:  GameManager.Instance.UpdateMatchAndLobbyState();
                     EmitSignal(SignalName.LobbyUpdated);
                     EmitSignal(SignalName.MatchUpdated);
-                    //EmitSignal(SignalName.CursorPartyUpdated);
+                    EmitSignal(SignalName.CursorPartyUpdated);
                     //Check to see if a user joined the lobby before the match started or after.
                     //If a user joins while match is in progress, you will only receive MEMBER_JOIN & ROOM_READY RTT updates.
                     if (m_PresentWhileStarted)
@@ -312,28 +325,29 @@ public partial class BCManager : Node
                 var op = json["op"] as string;
                 if (op == "move")
                 {
-                    //member.IsAlive = true;
-                    //float mousePosX = (float)Convert.ToDouble(data["x"]);
-                    //float mousePosY = (float)Convert.ToDouble(data["y"]);
+                    GD.Print("Move Message received!");
+                    member.IsAlive = true;
+                    float mousePosX = (float)Convert.ToDouble(data["x"]);
+                    float mousePosY = (float)Convert.ToDouble(data["y"]);
 
-                    //member.MousePosition.y = mousePosY;
-                    //member.MousePosition.x = mousePosX;
+                    member.MousePosition.Y = mousePosY;
+                    member.MousePosition.X = mousePosX;
                 }
                 else if (op == "shockwave")
                 {
-                    ////Debug.Log("op == shockwave");
-                    //Vector2 position;
-                    //position.x = (float)Convert.ToDouble(data["x"]);
-                    //position.y = (float)Convert.ToDouble(data["y"]);
-                    //member.ShockwavePositions.Add(position);
-                    //if (data.ContainsKey("teamCode"))
-                    //{
-                    //    TeamCodes shockwaveCode = (TeamCodes)data["teamCode"];
-                    //    member.ShockwaveTeamCodes.Add(shockwaveCode);
+                    float shockWavePosX = (float)Convert.ToDouble(data["x"]); ;
+                    float shockWavePosY = (float)Convert.ToDouble(data["y"]); ;
+                    //Debug.Log("op == shockwave");
+                    Vector2 position = new Vector2(shockWavePosX, shockWavePosY);
+                    member.ShockwavePositions.Add(position);
+                    if (data.ContainsKey("teamCode"))
+                    {
+                        TeamCodes shockwaveCode = (TeamCodes)data["teamCode"];
+                        member.ShockwaveTeamCodes.Add(shockwaveCode);
 
-                    //    TeamCodes instigatorCode = (TeamCodes)data["instigator"];
-                    //    member.InstigatorTeamCodes.Add(instigatorCode);
-                    //}
+                        TeamCodes instigatorCode = (TeamCodes)data["instigator"];
+                        member.InstigatorTeamCodes.Add(instigatorCode);
+                    }
                 }
             }
 

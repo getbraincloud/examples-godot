@@ -74,4 +74,29 @@ public partial class GameManager : Node
 
         m_BCManager.UpdateReady(extra);
     }
+
+    public static Color ReturnUserColor(GameColors newColor = GameColors.White)
+    {
+        switch (newColor)
+        {
+            case GameColors.Black:
+                return new Color(1, 1, 1);
+            case GameColors.Purple:
+                return new Color(0.33f, 0.25f, 0.37f);
+            case GameColors.Grey:
+                return new Color(0.4f, 0.4f, 0.4f);
+            case GameColors.Orange:
+                return new Color(0.85f, 0.4f, 0.04f);
+            case GameColors.Blue:
+                return new Color(0.31f, 0.54f, 0.84f);
+            case GameColors.Green:
+                return new Color(0.39f, 0.72f, 0.39f);
+            case GameColors.Yellow:
+                return new Color(0.9f, 0.78f, 0.43f);
+            case GameColors.Cyan:
+                return new Color(0.86f, 0.96f, 1);
+            default:
+                return new Color(0, 0, 0);
+        }
+    }
 }
