@@ -82,7 +82,7 @@ public partial class GameManager : Node
         switch (newColor)
         {
             case GameColors.Black:
-                return new Color(1, 1, 1);
+                return new Color(0, 0, 0);
             case GameColors.Purple:
                 return new Color(0.33f, 0.25f, 0.37f);
             case GameColors.Grey:

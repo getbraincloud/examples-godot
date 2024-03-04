@@ -45,8 +45,8 @@ public partial class BCManager : Node
     // brainCloud app IDs
     // BrainCloud constants
     private string url = "https://api.internal.braincloudservers.com/dispatcherv2";
-    private string appId = "";
-    private string secretKey = "";
+    private string appId = "23649";
+    private string secretKey = "a754a2c0-72d9-46ce-9fdf-18e9c19a556c";
     private string version = "1.0.0";
 
     public override void _Ready()
