@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://dyw4gwecooxcd"]
+
+[ext_resource type="Script" path="res://CursorParty.cs" id="1_haept"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iqtjy"]
+bg_color = Color(0.2, 0.2, 0.2, 1)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2tt1o"]
+size = Vector2(800, 600)
+
+[node name="CursorParty" type="Area2D"]
+script = ExtResource("1_haept")
+
+[node name="GameAreaPanel" type="Panel" parent="."]
+custom_minimum_size = Vector2(800, 600)
+offset_right = 800.0
+offset_bottom = 600.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_iqtjy")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(400, 300)
+shape = SubResource("RectangleShape2D_2tt1o")
