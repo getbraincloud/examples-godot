@@ -16,29 +16,22 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_d8233")
 
-[node name="UserLabel" type="Label" parent="."]
-layout_mode = 2
-text = "Logged In As: <NAME>"
-horizontal_alignment = 1
-
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
 [node name="LobbyTypeLabel" type="Label" parent="HBoxContainer"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Choose Lobby Type"
 
 [node name="LobbyOptionButton" type="OptionButton" parent="HBoxContainer"]
 layout_mode = 2
-item_count = 4
+theme_override_font_sizes/font_size = 20
+item_count = 2
 popup/item_0/text = "CursorPartyV2"
 popup/item_0/id = 0
 popup/item_1/text = "CursorPartyV2Backfill"
 popup/item_1/id = 1
-popup/item_2/text = "TeamCursorPartyV2"
-popup/item_2/id = 2
-popup/item_3/text = "TeamCursorPartyV2Backfill"
-popup/item_3/id = 3
 
 [node name="MenuButtons" type="HBoxContainer" parent="."]
 layout_mode = 2
@@ -47,9 +40,11 @@ alignment = 1
 [node name="LogOutButton" type="Button" parent="MenuButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
 text = "LOG OUT"
 
 [node name="PlayButton" type="Button" parent="MenuButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
 text = "PLAY"

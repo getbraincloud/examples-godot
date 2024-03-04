@@ -17,10 +17,10 @@ public partial class Lobby : Node
         {
             return;
         }
-        GD.Print("members length = " + jsonMembers.Length);
+        
         for (int i = 0; i < jsonMembers.Length; ++i)
         {
-            GD.Print("Creating new user");
+            
             Dictionary<string, object> jsonMember = jsonMembers[i];
             var user = new UserInfo(jsonMember);
             if (user.ID == GameManager.Instance.CurrentUserInfo.ID)

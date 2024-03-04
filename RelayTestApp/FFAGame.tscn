@@ -30,6 +30,7 @@ alignment = 1
 [node name="PlayersLabel" type="Label" parent="HBoxContainer/PlayerInfo"]
 layout_mode = 2
 size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 30
 text = "Players"
 
 [node name="PlayersContainer" type="VBoxContainer" parent="HBoxContainer/PlayerInfo"]
@@ -44,7 +45,9 @@ theme_override_constants/margin_bottom = 30
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/GameSide"]
 layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_override_constants/separation = 30
 alignment = 1
 
 [node name="GameArea" type="MarginContainer" parent="HBoxContainer/GameSide/VBoxContainer"]
@@ -61,8 +64,12 @@ alignment = 1
 
 [node name="EndMatchButton" type="Button" parent="HBoxContainer/GameSide/VBoxContainer/Buttons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
 text = "END MATCH"
 
 [node name="LeaveGameButton" type="Button" parent="HBoxContainer/GameSide/VBoxContainer/Buttons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
 text = "LEAVE GAME"

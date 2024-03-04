@@ -44,7 +44,7 @@ public partial class UserInfo : Node
         if (GameManager.Instance.Mode == GameManager.GameMode.FreeForAll)
         {
             Dictionary<string, object> extra = userJson["extra"] as Dictionary<string, object>;
-            GD.Print("Setting color");  
+              
             int colorIndex = 0;
             if (extra != null && extra.ContainsKey("colorIndex"))
             {

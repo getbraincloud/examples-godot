@@ -1,6 +1,30 @@
-[gd_scene load_steps=2 format=3 uid="uid://byugrv5r41ova"]
+[gd_scene load_steps=10 format=3 uid="uid://byugrv5r41ova"]
 
 [ext_resource type="Script" path="res://FFALobby.cs" id="1_bm0di"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_iix3k"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_46sau"]
+bg_color = Color(0.33, 0.25, 0.37, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v54ar"]
+bg_color = Color(0.4, 0.4, 0.4, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fuo6t"]
+bg_color = Color(0.85, 0.4, 0.04, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jgix7"]
+bg_color = Color(0.31, 0.51, 0.84, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qirxl"]
+bg_color = Color(0.39, 0.72, 0.39, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d55rd"]
+bg_color = Color(0.9, 0.78, 0.3, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kwpfk"]
+bg_color = Color(0.86, 0.96, 1, 1)
 
 [node name="FFALobby" type="VBoxContainer"]
 anchors_preset = 8
@@ -14,10 +38,12 @@ offset_right = 142.5
 offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 20
 script = ExtResource("1_bm0di")
 
 [node name="Title" type="Label" parent="."]
 layout_mode = 2
+theme_override_font_sizes/font_size = 30
 text = "Free-For-All Lobby"
 horizontal_alignment = 1
 
@@ -25,40 +51,65 @@ horizontal_alignment = 1
 layout_mode = 2
 alignment = 1
 
-[node name="Button" type="Button" parent="ColourButtons"]
+[node name="BlackButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_iix3k")
 text = "0"
 
-[node name="Button2" type="Button" parent="ColourButtons"]
+[node name="PurpleButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_46sau")
 text = "1"
 
-[node name="Button3" type="Button" parent="ColourButtons"]
+[node name="GreyButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_v54ar")
 text = "2"
 
-[node name="Button4" type="Button" parent="ColourButtons"]
+[node name="OrangeButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_fuo6t")
 text = "3"
 
-[node name="Button5" type="Button" parent="ColourButtons"]
+[node name="BlueButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_jgix7")
 text = "4"
 
-[node name="Button6" type="Button" parent="ColourButtons"]
+[node name="GreenButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_qirxl")
 text = "5"
 
-[node name="Button7" type="Button" parent="ColourButtons"]
+[node name="YellowButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_d55rd")
 text = "6"
 
-[node name="Button8" type="Button" parent="ColourButtons"]
+[node name="CyanButton" type="Button" parent="ColourButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_kwpfk")
 text = "7"
 
 [node name="LobbyMembersLabel" type="Label" parent="."]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "Lobby Members:"
 
 [node name="LobbyMembers" type="VBoxContainer" parent="."]
@@ -70,16 +121,29 @@ alignment = 1
 
 [node name="LeaveButton" type="Button" parent="LobbyButtons"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "LEAVE LOBBY"
 
 [node name="JoinButton" type="Button" parent="LobbyButtons"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "JOIN MATCH"
 
 [node name="StartButton" type="Button" parent="LobbyButtons"]
 layout_mode = 2
+theme_override_font_sizes/font_size = 20
 text = "START MATCH"
 
 [node name="LobbyIDLabel" type="Label" parent="."]
 layout_mode = 2
+theme_override_font_sizes/font_size = 15
 text = "_LobbyID"
+
+[connection signal="pressed" from="ColourButtons/BlackButton" to="." method="OnColourButtonPressed" binds= [0]]
+[connection signal="pressed" from="ColourButtons/PurpleButton" to="." method="OnColourButtonPressed" binds= [1]]
+[connection signal="pressed" from="ColourButtons/GreyButton" to="." method="OnColourButtonPressed" binds= [2]]
+[connection signal="pressed" from="ColourButtons/OrangeButton" to="." method="OnColourButtonPressed" binds= [3]]
+[connection signal="pressed" from="ColourButtons/BlueButton" to="." method="OnColourButtonPressed" binds= [4]]
+[connection signal="pressed" from="ColourButtons/GreenButton" to="." method="OnColourButtonPressed" binds= [5]]
+[connection signal="pressed" from="ColourButtons/YellowButton" to="." method="OnColourButtonPressed" binds= [6]]
+[connection signal="pressed" from="ColourButtons/CyanButton" to="." method="OnColourButtonPressed" binds= [7]]

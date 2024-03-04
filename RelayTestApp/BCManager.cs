@@ -28,51 +28,62 @@ public partial class BCManager : Node
     public delegate void CursorPartyUpdatedEventHandler();
     [Signal]
     public delegate void ConnectedToRelayEventHandler();
+    [Signal]
+    public delegate void FoundGameInProgressEventHandler();
+    [Signal]
+    public delegate void LeaveLobbyReadyEventHandler();
+    [Signal]
+    public delegate void MatchEndedEventHandler();
+    [Signal]
+    public delegate void StartingMatchEventHandler();
 
-	private BrainCloudWrapper m_BrainCloud;
-	private GameManager m_GameManager;
+	private BrainCloudWrapper _brainCloud;
+	private GameManager _gameManager;
 
-	private bool m_PresentWhileStarted;
+	private bool _presentWhileStarted;
 
-	public override void _Ready()
+    // brainCloud app IDs
+    // BrainCloud constants
+    private string url = "https://api.internal.braincloudservers.com/dispatcherv2";
+    private string appId = "";
+    private string secretKey = "";
+    private string version = "1.0.0";
+
+    public override void _Ready()
 	{
-		m_GameManager = GetNode<GameManager>("/root/GameManager");
+		_gameManager = GetNode<GameManager>("/root/GameManager");
 		
 		// Create and initialize the BrainCloud wrapper
-		m_BrainCloud = new BrainCloudWrapper();
+		_brainCloud = new BrainCloudWrapper();
 
-		m_BrainCloud.Init(Constants.kBrainCloudServer, Constants.kBrainCloudAppSecret, Constants.kBrainCloudAppID, Constants.kBrainCloudAppVersion);
+		_brainCloud.Init(url, secretKey, appId, version);
 
-		//m_BrainCloud.Client.EnableLogging(true);
+		_brainCloud.Client.EnableLogging(true);
 	}
 
 	public override void _Process(double delta)
 	{
 		// Make sure you invoke this method in Update, or else you won't get any callbacks
-		m_BrainCloud.RunCallbacks();
+		_brainCloud.RunCallbacks();
 	}
 
 	public void AuthenticateUniversal(string universalID, string password)
 	{
 		BrainCloud.FailureCallback failureCallback = (status, reasonCode, jsonError, cbObject) =>
 		{
-			GD.Print("Anonymous Authentication Failure :(\n" + jsonError);
 			EmitSignal(SignalName.AuthenticationRequestFailed);
 		};
 
-		GameManager.Instance.CurrentUserInfo.Username = universalID;
-		m_BrainCloud.AuthenticateUniversal(universalID, password, true, HandlePlayerState, failureCallback);
+        GameManager.Instance.CurrentUserInfo.Username = universalID;
+		_brainCloud.AuthenticateUniversal(universalID, password, true, HandlePlayerState, failureCallback);
 	}
 
 	public void FindLobby(string lobbyType)
 	{
-		GD.Print("registering callback");
-		m_BrainCloud.RTTService.RegisterRTTLobbyCallback(OnLobbyEvent);
+		_brainCloud.RTTService.RegisterRTTLobbyCallback(OnLobbyEvent);
 
 		SuccessCallback enableRTTSuccessCallback = (responseData, cbObject) =>
 		{
-			GD.Print("RTT Enabled!");
-
 			// algo: The algorithm to use for increasing the search scope
 			Dictionary<string, object> algo = new Dictionary<string, object>();
 
@@ -91,7 +102,6 @@ public partial class BCManager : Node
 
 			// extraJson: Initial extra-data about this user.
 			Dictionary<string, object> extra = new Dictionary<string, object>();
-			GD.Print("colour: " + (int)GameManager.Instance.CurrentUserInfo.UserGameColor);
 			extra["colorIndex"] = (int)GameManager.Instance.CurrentUserInfo.UserGameColor;
 
 			// teamCode:
@@ -108,24 +118,50 @@ public partial class BCManager : Node
 
 			FailureCallback failureCallback = (status, code, error, cbObject) =>
 			{
-				GD.Print(string.Format("Failed | {0}  {1}  {2}", status, code, error));
+				GD.Print(string.Format("FindOrCreateLobby Failed | {0}  {1}  {2}", status, code, error));
 			};
 
-			m_BrainCloud.LobbyService.FindOrCreateLobby(lobbyType, 0, 1, algo, filterJson, 0, false, extra, teamCode, settings, null, successCallback, failureCallback);
+			_brainCloud.LobbyService.FindOrCreateLobby(lobbyType, 0, 1, algo, filterJson, 0, false, extra, teamCode, settings, null, successCallback, failureCallback);
 		};
 
 		FailureCallback enableRTTFailureCallback = (status, code, error, cbObject) =>
 		{
-			GD.Print(string.Format("[EnableRTT Failed] {0}  {1}  {2}", status, code, error));
+			GD.Print(string.Format("EnableRTT Failed {0}  {1}  {2}", status, code, error));
 		};
 
 		// Real-time Tech (RTT) must be checked on the dashboard, under Design | Core App Info | Advanced Settings.
-		m_BrainCloud.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, enableRTTSuccessCallback, enableRTTFailureCallback);
+		_brainCloud.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, enableRTTSuccessCallback, enableRTTFailureCallback);
 	}
+
+    public void LeaveGame()
+    {
+        _brainCloud.RelayService.DeregisterRelayCallback();
+        _brainCloud.RelayService.DeregisterSystemCallback();
+        _brainCloud.RelayService.Disconnect();
+        _brainCloud.RTTService.DeregisterAllRTTCallbacks();
+        _brainCloud.RTTService.DisableRTT();
+
+        EmitSignal(SignalName.LeaveLobbyReady);
+    }
+
+    public void EndMatch()
+    {
+        EmitSignal(SignalName.LobbyUpdated);
+        Dictionary<string, object> json = new Dictionary<string, object>();
+        json["cxId"] = _brainCloud.Client.RTTConnectionID;
+        json["lobbyId"] = GameManager.Instance.CurrentLobby.LobbyID;
+        json["op"] = "END_MATCH";
+        _brainCloud.RelayService.EndMatch(json);
+    }
+
+    public void JoinMatch()
+    {
+        ConnectRelay();
+    }
 
 	public void UpdateReady(Dictionary<string, object> extraJson)
 	{
-		m_BrainCloud.LobbyService.UpdateReady(GameManager.Instance.CurrentLobby.LobbyID, GameManager.Instance.IsReady, extraJson);
+		_brainCloud.LobbyService.UpdateReady(GameManager.Instance.CurrentLobby.LobbyID, GameManager.Instance.IsReady, extraJson);
 	}
 
     public void SendRelayMessage(Dictionary<string, object> in_dict)
@@ -137,12 +173,11 @@ public partial class BCManager : Node
         bool in_ordered = false;
         int in_channel = 0;
 
-        m_BrainCloud.RelayService.Send(in_data, to_netID, in_reliable, in_ordered, in_channel);
+        _brainCloud.RelayService.Send(in_data, to_netID, in_reliable, in_ordered, in_channel);
     }
 
 	private void HandlePlayerState(string jsonResponse, object cobject)
 	{
-		GD.Print("HandlePlayerState");
 		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
 		var data = response["data"] as Dictionary<string, object>;
 		var tempUsername = GameManager.Instance.CurrentUserInfo.Username;
@@ -152,19 +187,19 @@ public partial class BCManager : Node
 
 		SuccessCallback successCallback = (response, cbObject) =>
 		{
-			GD.Print(string.Format("Success | {0}", response));
+			GD.Print(string.Format("UpdateName Success | {0}", response));
 			EmitSignal(SignalName.AuthenticationRequestCompleted);
 		};
 		FailureCallback failureCallback = (status, code, error, cbObject) =>
 		{
-			GD.Print(string.Format("Failed | {0}  {1}  {2}", status, code, error));
+			GD.Print(string.Format("UpdateName Failed | {0}  {1}  {2}", status, code, error));
 		};
 
 		// If no username is set for this user, ask for it
 		if (!data.ContainsKey("playerName"))
 		{
 			// Update name for display
-			m_BrainCloud.PlayerStateService.UpdateName(tempUsername, successCallback, failureCallback);
+			_brainCloud.PlayerStateService.UpdateName(tempUsername, successCallback, failureCallback);
 		}
 		else
 		{
@@ -173,7 +208,7 @@ public partial class BCManager : Node
 			{
 				userInfo.Username = tempUsername;
 			}
-			m_BrainCloud.PlayerStateService.UpdateName(userInfo.Username, successCallback, failureCallback);
+			_brainCloud.PlayerStateService.UpdateName(userInfo.Username, successCallback, failureCallback);
 		}
 		GameManager.Instance.CurrentUserInfo = userInfo;
 	}
@@ -181,13 +216,13 @@ public partial class BCManager : Node
     // Connect to the Relay server and start the game
     private void ConnectRelay()
     {
-        m_PresentWhileStarted = false;
-        m_BrainCloud.RTTService.RegisterRTTLobbyCallback(OnLobbyEvent);
-        m_BrainCloud.RelayService.RegisterRelayCallback(OnRelayMessage);
-        m_BrainCloud.RelayService.RegisterSystemCallback(OnRelaySystemMessage);
+        _presentWhileStarted = false;
+        _brainCloud.RTTService.RegisterRTTLobbyCallback(OnLobbyEvent);
+        _brainCloud.RelayService.RegisterRelayCallback(OnRelayMessage);
+        _brainCloud.RelayService.RegisterSystemCallback(OnRelaySystemMessage);
 
         int port = 0;
-        GameManager.Instance.Protocol = RelayConnectionType.WEBSOCKET; // TODO:  add more options
+        GameManager.Instance.Protocol = RelayConnectionType.WEBSOCKET; // TODO:  right now, only WebSocket is implemented
         switch (GameManager.Instance.Protocol)
         {
             case RelayConnectionType.WEBSOCKET:
@@ -210,16 +245,15 @@ public partial class BCManager : Node
 
         SuccessCallback successCallback = (response, cbObject) =>
         {
-            GD.Print(string.Format("Relay Connect Success | {0}", response));
+            GD.Print(string.Format("Connect Success | {0}", response));
             EmitSignal(SignalName.ConnectedToRelay);
         };
         FailureCallback failureCallback = (status, code, error, cbObject) =>
         {
-            GD.Print(string.Format("Relay Connect Failed | {0}  {1}  {2}", status, code, error));
+            GD.Print(string.Format("Connect Failed | {0}  {1}  {2}", status, code, error));
         };
 
-        GD.Print("Sending connect relay request");
-        m_BrainCloud.RelayService.Connect(connectionType, options, successCallback, failureCallback);
+        _brainCloud.RelayService.Connect(connectionType, options, successCallback, failureCallback);
     }
 
     private Dictionary<string, object> DeserializeString(byte[] in_data, char in_joinChar = '=', char in_splitChar = ';')
@@ -234,15 +268,13 @@ public partial class BCManager : Node
         }
         catch (Exception)
         {
-            //Debug.LogWarning("COULD NOT SERIALIZE " + jsonMessage);
+            GD.Print("COULD NOT SERIALIZE " + jsonMessage);
         }
         return toDict;
     }
 
     private void OnLobbyEvent(string jsonResponse)
 	{
-		// TODO
-		GD.Print("Lobby Event received" + jsonResponse);
         Dictionary<string, object> response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
         Dictionary<string, object> jsonData = response["data"] as Dictionary<string, object>;
 
@@ -253,13 +285,11 @@ public partial class BCManager : Node
             GameManager.Instance.CurrentLobby = new Lobby(jsonData["lobby"] as Dictionary<string, object>, jsonData["lobbyId"] as string);
 
             EmitSignal(SignalName.FoundLobby);
-
-            //TODO:  GameManager.Instance.UpdateMatchAndLobbyState();
             EmitSignal(SignalName.LobbyUpdated);
             EmitSignal(SignalName.MatchUpdated);
         }
 
-        //Using the key "operation" to determine what state the lobby is in
+        // Using the key "operation" to determine what state the lobby is in
         if (response.ContainsKey("operation"))
         {
             var operation = response["operation"] as string;
@@ -271,35 +301,33 @@ public partial class BCManager : Node
                         if ((int)reason["code"] != ReasonCodes.RTT_ROOM_READY)
                         {
                             // Disbanded for any other reason than ROOM_READY, means we failed to launch the game.
-                            //CloseGame(true);
+                            LeaveGame();
                         }
+
                         break;
                     }
                 case "STARTING":
-                    // Save our picked color index
-                    m_PresentWhileStarted = true;
+                    _presentWhileStarted = true;
                     GameManager.Instance.UpdatePresentSinceStart();
-                    //Settings.SetPlayerPrefColor(GameManager.Instance.CurrentUserInfo.UserGameColor);
+                    EmitSignal(SignalName.StartingMatch);
                     
                     break;
                 case "ROOM_READY":
-                    GD.Print("ROOM_READY");
                     GameManager.Instance.CurrentServer = new Server(jsonData);
-                    // TODO:  GameManager.Instance.UpdateMatchAndLobbyState();
+                    
                     EmitSignal(SignalName.LobbyUpdated);
                     EmitSignal(SignalName.MatchUpdated);
                     EmitSignal(SignalName.CursorPartyUpdated);
-                    //Check to see if a user joined the lobby before the match started or after.
-                    //If a user joins while match is in progress, you will only receive MEMBER_JOIN & ROOM_READY RTT updates.
-                    if (m_PresentWhileStarted)
+
+                    // Check to see if a user joined the lobby before the match started or after.
+                    // If a user joins while match is in progress, you will only receive MEMBER_JOIN & ROOM_READY RTT updates.
+                    if (_presentWhileStarted)
                     {
-                        GD.Print("Connect relay");
                         ConnectRelay();
                     }
                     else
                     {
-                        // TODO:  show JOIN GAME button
-						//GameManager.Instance.JoinInProgressButton.gameObject.SetActive(true);
+                        EmitSignal(SignalName.FoundGameInProgress);
                     }
                     break;
             }
@@ -308,7 +336,7 @@ public partial class BCManager : Node
 
 	private void OnRelayMessage(short netId, byte[] jsonResponse)
 	{
-        var memberProfileId = m_BrainCloud.RelayService.GetProfileIdForNetId(netId);
+        var memberProfileId = _brainCloud.RelayService.GetProfileIdForNetId(netId);
 
         var json = DeserializeString(jsonResponse);
         Lobby lobby = GameManager.Instance.CurrentLobby;
@@ -319,13 +347,11 @@ public partial class BCManager : Node
                 var data = json["data"] as Dictionary<string, object>;
                 if (data == null)
                 {
-                    //Debug.LogWarning("On Relay Message is null !");
                     break;
                 }
                 var op = json["op"] as string;
                 if (op == "move")
                 {
-                    GD.Print("Move Message received!");
                     member.IsAlive = true;
                     float mousePosX = (float)Convert.ToDouble(data["x"]);
                     float mousePosY = (float)Convert.ToDouble(data["y"]);
@@ -337,7 +363,7 @@ public partial class BCManager : Node
                 {
                     float shockWavePosX = (float)Convert.ToDouble(data["x"]); ;
                     float shockWavePosY = (float)Convert.ToDouble(data["y"]); ;
-                    //Debug.Log("op == shockwave");
+                    
                     Vector2 position = new Vector2(shockWavePosX, shockWavePosY);
                     member.ShockwavePositions.Add(position);
                     if (data.ContainsKey("teamCode"))
@@ -356,7 +382,6 @@ public partial class BCManager : Node
 
 	private void OnRelaySystemMessage(string jsonResponse)
 	{
-        GD.Print("RelaySystemMessage");
         var json = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
         if (json["op"] as string == "DISCONNECT")
         {
@@ -370,7 +395,7 @@ public partial class BCManager : Node
                     if (member.ID == profileId)
                     {
                         member.IsAlive = false;
-                        // TODO:  GameManager.Instance.UpdateMatchAndLobbyState();
+                        
 						EmitSignal(SignalName.LobbyUpdated);
                         EmitSignal(SignalName.MatchUpdated);
                         break;
@@ -380,7 +405,6 @@ public partial class BCManager : Node
         }
         else if (json["op"] as string == "CONNECT")
         {
-            GD.Print("received CONNECT");
             //Check if user connected is new, if so update name to not have "In Lobby"
             EmitSignal(SignalName.MatchUpdated);
         }
@@ -388,15 +412,15 @@ public partial class BCManager : Node
         {
             GameManager.Instance.IsReady = false;
             GameManager.Instance.CurrentUserInfo.PresentSinceStart = false;
-            //TODO:  GameManager.Instance.UpdateMatchAndLobbyState();
+   
 			EmitSignal(SignalName.LobbyUpdated);
             EmitSignal(SignalName.MatchUpdated);
-            //StateManager.Instance.ChangeState(GameStates.Lobby); TODO:  go to lobby?
+            EmitSignal(SignalName.MatchEnded);
         }
         else if (json["op"] as string == "MIGRATE_OWNER")
         {
-            GameManager.Instance.CurrentLobby.ReassignOwnerID(m_BrainCloud.RelayService.OwnerCxId);
-            // TODO:  GameManager.Instance.UpdateMatchAndLobbyState();
+            GameManager.Instance.CurrentLobby.ReassignOwnerID(_brainCloud.RelayService.OwnerCxId);
+            
             EmitSignal(SignalName.LobbyUpdated);
             EmitSignal(SignalName.MatchUpdated);
         }

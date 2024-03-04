@@ -33,7 +33,6 @@ public partial class CursorParty : Area2D
         {
             if (@event is InputEventMouseButton eventMouseButton && @event.IsPressed())
             {
-                GD.Print("click");
                 EmitSignal(SignalName.MouseClicked, _mousePos, (int)eventMouseButton.ButtonIndex);
             }
         }
@@ -60,7 +59,6 @@ public partial class CursorParty : Area2D
         return _gameAreaPanel.GetRect();
     }
 
-    // TODO:  not sure if necessary or if can call GetGlobalRect() from anywhere
     public Rect2 GetGlobalRect()
     {
         return _gameAreaPanel.GetGlobalRect();

@@ -6,32 +6,80 @@ public partial class FFALobby : Control
 {
     [Signal]
     public delegate void StartMatchRequestedEventHandler();
+    [Signal]
+    public delegate void LeaveLobbyRequestedEventHandler();
+    [Signal]
+    public delegate void JoinMatchRequestedEventHandler();
 
-    private BCManager m_BCManager;
-    
-    private VBoxContainer m_LobbyMembersContainer;
-    private Label m_LobbyIDLabel;
-    private Button m_StartButton;
+    private BCManager _bcManager;
+
+    private Button _blackButton;
+    private Button _purpleButton;
+    private Button _greyButton;
+    private Button _orangeButton;
+    private Button _blueButton;
+    private Button _greenButton;
+    private Button _yellowButton;
+    private Button _cyanButton;
+
+    private VBoxContainer _lobbyMembersContainer;
+    private Label _lobbyIDLabel;
+    private Button _leaveButton;
+    private Button _startButton;
+    private Button _joinButton;
 
     public override void _Ready()
     {
-        m_BCManager = GetNode<BCManager>("/root/BCManager");
+        _bcManager = GetNode<BCManager>("/root/BCManager");
 
-        m_LobbyMembersContainer = GetNode<VBoxContainer>("LobbyMembers");
+        _blackButton = GetNode<Button>("ColourButtons/BlackButton");
+        _purpleButton = GetNode<Button>("ColourButtons/PurpleButton");
+        _greyButton = GetNode<Button>("ColourButtons/GreyButton");
+        _orangeButton = GetNode<Button>("ColourButtons/OrangeButton");
+        _blueButton = GetNode<Button>("ColourButtons/BlueButton");
+        _greenButton = GetNode<Button>("ColourButtons/GreenButton");
+        _yellowButton = GetNode<Button>("ColourButtons/YellowButton");
+        _cyanButton = GetNode<Button>("ColourButtons/CyanButton");
+        
 
-        m_StartButton = GetNode<Button>("LobbyButtons/StartButton");
-        m_StartButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnStartButtonPressed));
+        _lobbyMembersContainer = GetNode<VBoxContainer>("LobbyMembers");
 
-        m_LobbyIDLabel = GetNode<Label>("LobbyIDLabel");
-        m_LobbyIDLabel.Hide();
+        _leaveButton = GetNode<Button>("LobbyButtons/LeaveButton");
+        _leaveButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLeaveButtonPressed));
+
+        _startButton = GetNode<Button>("LobbyButtons/StartButton");
+        _startButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnStartButtonPressed));
+        _startButton.Hide();
+
+        _joinButton = GetNode<Button>("LobbyButtons/JoinButton");
+        _joinButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnJoinButtonPressed));
+        _joinButton.Hide();
+
+        _lobbyIDLabel = GetNode<Label>("LobbyIDLabel");
+        _lobbyIDLabel.Hide();
+    }
+
+    public void ShowStartButton(bool show)
+    {
+        if (show)
+        {
+            _startButton.Show();
+        }
+
+        else { _startButton.Hide(); }
+    }
+
+    public void ShowJoinButton()
+    {
+        _joinButton.Show();
     }
 
     public void DisplayLobbyID()
     {
         if (!string.IsNullOrEmpty(GameManager.Instance.CurrentLobby.LobbyID))
         {
-            m_LobbyIDLabel.Text = "Lobby ID: " + GameManager.Instance.CurrentLobby.LobbyID;
-            m_LobbyIDLabel.Show();
+            _lobbyIDLabel.Text = "Lobby ID: " + GameManager.Instance.CurrentLobby.LobbyID;
+            _lobbyIDLabel.Show();
         }
     }
 
@@ -39,15 +87,35 @@ public partial class FFALobby : Control
     {
         var lobbyMemberLabel = new Label();
         lobbyMemberLabel.Text = name;
-        m_LobbyMembersContainer.AddChild(lobbyMemberLabel);
+        _lobbyMembersContainer.AddChild(lobbyMemberLabel);
     }
 
     public void ClearLobbyMembers()
     {
-        foreach(Node lobbyMember in m_LobbyMembersContainer.GetChildren())
+        foreach(Node lobbyMember in _lobbyMembersContainer.GetChildren())
         {
             lobbyMember.QueueFree();
         }
+    }
+
+    private void OnColourButtonPressed(int buttonIndex)
+    {
+        GameManager.GameColors newColour = (GameManager.GameColors)buttonIndex;
+
+        GameManager.Instance.CurrentUserInfo.UserGameColor = newColour;
+
+        // Send update to brainCloud
+        Dictionary<string, object> extra = new Dictionary<string, object>();
+        extra["colorIndex"] = (int)GameManager.Instance.CurrentUserInfo.UserGameColor;
+        extra["presentSinceStart"] = GameManager.Instance.CurrentUserInfo.PresentSinceStart;
+        
+        _bcManager.UpdateReady(extra);
+
+    }
+
+    private void OnLeaveButtonPressed()
+    {
+        EmitSignal(SignalName.LeaveLobbyRequested);
     }
 
     private void OnStartButtonPressed()
@@ -56,11 +124,16 @@ public partial class FFALobby : Control
         
         GameManager.Instance.IsReady = true;
 
-        //Setting up a update to send to brain cloud about local users color
+        // Setting up a update to send to brain cloud about local users color
         var extra = new Dictionary<string, object>();
         extra["colorIndex"] = (int)GameManager.Instance.CurrentUserInfo.UserGameColor;
         extra["presentSinceStart"] = GameManager.Instance.CurrentUserInfo.PresentSinceStart;
 
-        m_BCManager.UpdateReady(extra);
+        _bcManager.UpdateReady(extra);
+    }
+
+    private void OnJoinButtonPressed()
+    {
+        EmitSignal(SignalName.JoinMatchRequested);
     }
 }

@@ -7,52 +7,89 @@ public partial class Main : Control
 	private MarginContainer m_CurrentSceneContainer;
 
 	private LoadingScreen _loadingScreen;
-	private Authentication m_AuthenticationScene;
-	private PreLobby m_PreLobby;
-	private FFALobby m_FFALobby;
-	private TeamLobby m_TeamLobby;
-	private FFAGame m_FFAGame;
+	private Authentication _authenticationScene;
+	private PreLobby _preLobby;
+	private FFALobby _ffaLobby;
+	private TeamLobby _teamLobby;
+	private FFAGame _ffaGame;
 
-	private Node m_CurrentScene;
+	private Node _currentScene;
 
-	private BCManager m_BCManager;
+	private BCManager _bcManager;
 
-	// TODO:  don't like this
 	private bool _findingMatch;
 
 	public override void _Ready()
 	{
-		m_BCManager = GetNode<BCManager>("/root/BCManager");
-		m_BCManager.Connect(BCManager.SignalName.AuthenticationRequestCompleted, new Callable(this, MethodName.OnAuthenticated));
-		m_BCManager.Connect(BCManager.SignalName.FoundLobby, new Callable(this, MethodName.OnLobbyFound));
-		m_BCManager.Connect(BCManager.SignalName.LobbyUpdated, new Callable(this, MethodName.OnLobbyUpdated));
-		m_BCManager.Connect(BCManager.SignalName.ConnectedToRelay, new Callable(this, MethodName.OnConnectedToRelay));
+		_bcManager = GetNode<BCManager>("/root/BCManager");
+		_bcManager.Connect(BCManager.SignalName.AuthenticationRequestCompleted, new Callable(this, MethodName.OnAuthenticated));
+		_bcManager.Connect(BCManager.SignalName.FoundLobby, new Callable(this, MethodName.OnLobbyFound));
+		_bcManager.Connect(BCManager.SignalName.LobbyUpdated, new Callable(this, MethodName.OnLobbyUpdated));
+		_bcManager.Connect(BCManager.SignalName.ConnectedToRelay, new Callable(this, MethodName.OnConnectedToRelay));
+		_bcManager.Connect(BCManager.SignalName.FoundGameInProgress, new Callable(this, MethodName.OnFoundGameInProgress));
+		_bcManager.Connect(BCManager.SignalName.LeaveLobbyReady, new Callable(this, MethodName.OnLeaveLobbyReady));
+		_bcManager.Connect(BCManager.SignalName.MatchEnded, new Callable(this, MethodName.OnMatchEnded));
+		_bcManager.Connect(BCManager.SignalName.StartingMatch, new Callable(this, MethodName.OnStartMatchRequested));
 
 		m_CurrentSceneContainer = GetNode<MarginContainer>("CurrentSceneContainer");
 
 		// Go to Authentication Scene first
 		var authenticationScene = GD.Load<PackedScene>("res://Authentication.tscn");
-		m_AuthenticationScene = (Authentication)authenticationScene.Instantiate();
-		ChangeScene(m_AuthenticationScene);
-		m_AuthenticationScene.Connect(Authentication.SignalName.AuthenticationRequested, new Callable(this, MethodName.OnAuthenticationRequested));
+		_authenticationScene = (Authentication)authenticationScene.Instantiate();
+		ChangeScene(_authenticationScene);
+		_authenticationScene.Connect(Authentication.SignalName.AuthenticationRequested, new Callable(this, MethodName.OnAuthenticationRequested));
 	}
 
 	private void ChangeScene(Node scene)
 	{
-		if (m_CurrentScene != null)
+		if (_currentScene != null)
 		{
-			m_CurrentScene.QueueFree();
+			_currentScene.QueueFree();
 		}
 
-		m_CurrentScene = scene;
+		_currentScene = scene;
 
-		m_CurrentSceneContainer.AddChild(m_CurrentScene);
+		m_CurrentSceneContainer.AddChild(_currentScene);
 	}
+
+	private void GoToPreLobby()
+	{
+        var preLobbyScene = GD.Load<PackedScene>("res://PreLobby.tscn");
+        _preLobby = (PreLobby)preLobbyScene.Instantiate();
+        ChangeScene(_preLobby);
+        _preLobby.Connect(PreLobby.SignalName.FindLobbyRequested, new Callable(this, MethodName.OnFindLobbyRequested));
+    }
+
+	private void GoToLobby()
+	{
+		if(GameManager.Instance.Mode == GameManager.GameMode.FreeForAll)
+		{
+            var ffaLobby = GD.Load<PackedScene>("res://FFALobby.tscn");
+            _ffaLobby = (FFALobby)ffaLobby.Instantiate();
+            ChangeScene(_ffaLobby);
+            _ffaLobby.Connect(FFALobby.SignalName.StartMatchRequested, new Callable(this, MethodName.OnStartMatchRequested));
+			_ffaLobby.Connect(FFALobby.SignalName.JoinMatchRequested, new Callable(this, MethodName.OnJoinMatchRequested));
+            _ffaLobby.Connect(FFALobby.SignalName.LeaveLobbyRequested, new Callable(this, MethodName.OnLeaveLobbyRequested));
+        }
+		else if(GameManager.Instance.Mode == GameManager.GameMode.Team)
+		{
+            var teamLobby = GD.Load<PackedScene>("res://TeamLobby.tscn");
+            _teamLobby = (TeamLobby)teamLobby.Instantiate();
+            ChangeScene(_teamLobby);
+        }
+	}
+
+	private void Disconnect()
+	{
+        var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
+        _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
+        _loadingScreen.SetLoadingMessage("Disconnecting . . .");
+        ChangeScene(_loadingScreen);
+        _bcManager.LeaveGame();
+    }
 
 	private void OnAuthenticationRequested()
 	{
-		GD.Print("Authenticating...");
-
 		var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
 		_loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
 		_loadingScreen.SetLoadingMessage("Authenticating . . .");
@@ -61,10 +98,7 @@ public partial class Main : Control
 
 	private void OnAuthenticated()
 	{
-		var preLobbyScene = GD.Load<PackedScene>("res://PreLobby.tscn");
-		m_PreLobby = (PreLobby)preLobbyScene.Instantiate();
-		ChangeScene(m_PreLobby);
-		m_PreLobby.Connect(PreLobby.SignalName.FindLobbyRequested, new Callable(this, MethodName.OnFindLobbyRequested));
+		GoToPreLobby();
 	}
 
 	private void OnFindLobbyRequested()
@@ -79,41 +113,19 @@ public partial class Main : Control
 	{
 		if(!_findingMatch)
 		{
-            switch (GameManager.Instance.Mode)
-            {
-                case GameManager.GameMode.FreeForAll:
-                    if (m_FFALobby == null)
-                    {
-                        GD.Print("Changing to Lobby Scene");
-                        var ffaLobby = GD.Load<PackedScene>("res://FFALobby.tscn");
-                        m_FFALobby = (FFALobby)ffaLobby.Instantiate();
-                        ChangeScene(m_FFALobby);
-                        m_FFALobby.Connect(FFALobby.SignalName.StartMatchRequested, new Callable(this, MethodName.OnStartMatchRequested));
-                    }
-                    break;
-                case GameManager.GameMode.Team:
-                    if (m_TeamLobby == null)
-                    {
-                        var teamLobby = GD.Load<PackedScene>("res://TeamLobby.tscn");
-                        m_TeamLobby = (TeamLobby)teamLobby.Instantiate();
-                        ChangeScene(m_TeamLobby);
-                    }
-                    break;
-                default:
-                    break;
-            }
+			GoToLobby();
         }
 	}
 
 	private void OnLobbyUpdated()
 	{
-		if(m_FFALobby != null)
+		if(_ffaLobby != null)
 		{
-			GD.Print("OnLobbyUpdate");
 			if (GameManager.Instance.Mode == GameManager.GameMode.FreeForAll)
 			{
-				m_FFALobby.DisplayLobbyID();
-				m_FFALobby.ClearLobbyMembers();
+				_ffaLobby.ShowStartButton(GameManager.Instance.IsLocalUserHost());
+				_ffaLobby.DisplayLobbyID();
+				_ffaLobby.ClearLobbyMembers();
 				Lobby lobby = GameManager.Instance.CurrentLobby;
 				for (int i = 0; i < lobby.Members.Count; i++)
 				{
@@ -127,10 +139,44 @@ public partial class Main : Control
 
 						GameManager.GameColors memberColour = lobby.Members[i].UserGameColor;
 
-						m_FFALobby.AddLobbyMember(memberName, memberColour);
+						_ffaLobby.AddLobbyMember(memberName, memberColour);
 					}
 				}
 			}
+		}
+	}
+
+	private void OnLeaveLobbyRequested()
+	{
+        _ffaLobby = null;
+		_teamLobby = null;
+		Disconnect();
+	}
+
+	private void OnLeaveLobbyReady()
+	{
+		GoToPreLobby();
+	}
+
+	private void OnMatchEnded()
+	{
+        var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
+        _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
+        _loadingScreen.SetLoadingMessage("Ending Match . . .");
+        ChangeScene(_loadingScreen);
+    }
+
+	private void OnLeaveMatchRequested()
+	{
+		_ffaGame = null;
+		Disconnect();
+	}
+
+	private void OnFoundGameInProgress()
+	{
+		if(_ffaLobby != null)
+		{
+			_ffaLobby.ShowJoinButton();
 		}
 	}
 
@@ -141,13 +187,27 @@ public partial class Main : Control
         _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
         _loadingScreen.SetLoadingMessage("Starting Match . . .");
         ChangeScene(_loadingScreen);
-        m_FFALobby = null;
+        _ffaLobby = null;
     }
 
 	private void OnConnectedToRelay()
 	{
 		var ffaGame = GD.Load<PackedScene>("res://FFAGame.tscn");
-		m_FFAGame = (FFAGame)ffaGame.Instantiate();
-		ChangeScene(m_FFAGame);
+		_ffaGame = (FFAGame)ffaGame.Instantiate();
+		ChangeScene(_ffaGame);
+
+		_ffaGame.ShowEndMatch(GameManager.Instance.IsLocalUserHost());
+
+		_ffaGame.Connect(FFAGame.SignalName.LeaveMatchRequested, new Callable(this, MethodName.OnLeaveMatchRequested));
+		_findingMatch = false;
+	}
+
+	private void OnJoinMatchRequested()
+	{
+        var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
+        _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
+        _loadingScreen.SetLoadingMessage("Joining Match . . .");
+        ChangeScene(_loadingScreen);
+        _bcManager.JoinMatch();
 	}
 }

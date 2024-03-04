@@ -4,12 +4,18 @@ using System.Collections.Generic;
 using static GameManager;
 
 public partial class FFAGame : Control
-{   
-    private BCManager m_BCManager;
+{
+    [Signal]
+    public delegate void LeaveMatchRequestedEventHandler();
+
+    private BCManager _bcManager;
 
     private VBoxContainer _playersContainer;
     private MarginContainer _gameArea;
     private CursorParty _cursorParty;
+
+    private Button _endMatchButton;
+    private Button _leaveMatchButton;
 
     private readonly List<Cursor> _userCursorsList = new List<Cursor>();
     private bool _inGameArea = false;
@@ -19,9 +25,9 @@ public partial class FFAGame : Control
 
     public override void _Ready()
     {
-        m_BCManager = GetNode<BCManager>("/root/BCManager");
-        m_BCManager.Connect(BCManager.SignalName.MatchUpdated, new Callable(this, MethodName.OnMatchUpdated));
-        m_BCManager.Connect(BCManager.SignalName.CursorPartyUpdated, new Callable(this, MethodName.OnCursorPartyUpdated));
+        _bcManager = GetNode<BCManager>("/root/BCManager");
+        _bcManager.Connect(BCManager.SignalName.MatchUpdated, new Callable(this, MethodName.OnMatchUpdated));
+        _bcManager.Connect(BCManager.SignalName.CursorPartyUpdated, new Callable(this, MethodName.OnCursorPartyUpdated));
 
         _playersContainer = GetNode<VBoxContainer>("HBoxContainer/PlayerInfo/PlayersContainer");
 
@@ -30,12 +36,24 @@ public partial class FFAGame : Control
         _cursorParty = GetNode<CursorParty>("HBoxContainer/GameSide/VBoxContainer/GameArea/CursorParty");
         _cursorParty.Connect(CursorParty.SignalName.MouseMoved, new Callable(this, MethodName.OnMouseMoved));
         _cursorParty.Connect(CursorParty.SignalName.MouseClicked, new Callable(this, MethodName.OnMouseClicked));
+
+        _endMatchButton = GetNode<Button>("HBoxContainer/GameSide/VBoxContainer/Buttons/EndMatchButton");
+        _endMatchButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnEndMatchButtonPressed));
+        _endMatchButton.Hide();
+
+        _leaveMatchButton = GetNode<Button>("HBoxContainer/GameSide/VBoxContainer/Buttons/LeaveGameButton");
+        _leaveMatchButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLeaveMatchButtonPressed));
     }
 
     public override void _Process(double delta)
     {
         UpdateCursorPositions();
         UpdateShockwaves();
+    }
+
+    public void ShowEndMatch(bool show)
+    {
+        if(show) _endMatchButton.Show();
     }
 
     public void AddPlayer(string name, GameManager.GameColors colour)
@@ -77,7 +95,6 @@ public partial class FFAGame : Control
     /// </summary>
     public void UpdateCursorList()
     {
-        GD.Print("Updating cursors . . .");
         Lobby lobby = GameManager.Instance.CurrentLobby;
         ClearCursors();
         
@@ -87,7 +104,6 @@ public partial class FFAGame : Control
             var cursor = GD.Load<PackedScene>("res://Cursor.tscn");
             Cursor playerCursor = (Cursor)cursor.Instantiate();
 
-            GD.Print("Adding cursor to scene");
             _cursorParty.AddChild(playerCursor);
 
             string memberName = lobby.Members[i].Username;
@@ -106,6 +122,16 @@ public partial class FFAGame : Control
                 playerCursor.SetUserCursor(true);
             }
         }
+    }
+
+    private void OnEndMatchButtonPressed()
+    {
+        _bcManager.EndMatch();
+    }
+
+    private void OnLeaveMatchButtonPressed()
+    {
+        EmitSignal(SignalName.LeaveMatchRequested);
     }
 
     /// <summary>
@@ -134,7 +160,6 @@ public partial class FFAGame : Control
 
     private void UpdateShockwaves()
     {
-        // TODO
         Lobby lobby = GameManager.Instance.CurrentLobby;
 
         foreach (var member in lobby.Members)
@@ -145,11 +170,11 @@ public partial class FFAGame : Control
                 {
                     if (member.ShockwaveTeamCodes.Count > 0 && member.InstigatorTeamCodes.Count > 0)
                     {
-                        //SetUpShockwave(member.ShockwavePositions[i], GameManager.ReturnUserColor(member.UserGameColor), member.ShockwaveTeamCodes[i], member.InstigatorTeamCodes[i]);
+                        CreateShockwave(member.ShockwavePositions[i], GameManager.ReturnUserColor(member.UserGameColor), member.ShockwaveTeamCodes[i], member.InstigatorTeamCodes[i]);
                     }
                     else
                     {
-                        //SetUpShockwave(member.ShockwavePositions[i], GameManager.ReturnUserColor(member.UserGameColor));
+                        CreateShockwave(member.ShockwavePositions[i], GameManager.ReturnUserColor(member.UserGameColor));
                     }
                 }
             }
@@ -168,16 +193,17 @@ public partial class FFAGame : Control
             int i = 0;
             foreach (var pos in _localShockwavePositions)
             {
-                //SetUpShockwave
-                //(
-                //    pos,
-                //    GameManager.ReturnUserColor(GameManager.Instance.CurrentUserInfo.UserGameColor),
-                //    _localShockwaveCodes[i],
-                //    GameManager.Instance.CurrentUserInfo.Team
-                //);
+                CreateShockwave
+                (
+                    pos,
+                    GameManager.ReturnUserColor(GameManager.Instance.CurrentUserInfo.UserGameColor),
+                    _localShockwaveCodes[i],
+                    GameManager.Instance.CurrentUserInfo.Team
+                );
                 i++;
             }
         }
+
         //Clear the list so there's no backlog of input positions
         if (_localShockwavePositions.Count > 0)
         {
@@ -186,9 +212,29 @@ public partial class FFAGame : Control
         }
     }
 
+
+    private void CreateShockwave(Vector2 position, Color waveColor, TeamCodes team = TeamCodes.all, TeamCodes instigatorTeam = TeamCodes.all)
+    {
+        var shockwave = GD.Load<PackedScene>("res://Shockwave.tscn");
+        Shockwave playerShockwave = (Shockwave)shockwave.Instantiate();
+
+        _cursorParty.AddChild(playerShockwave);
+
+        playerShockwave.Modulate = waveColor;
+
+        Rect2 gameAreaRect = _cursorParty.GetGameAreaRect();
+        Vector2 shockwavePosition = new Vector2(
+            gameAreaRect.Size.X * position.X,
+            gameAreaRect.Size.Y * position.Y
+        );
+
+        playerShockwave.Position = shockwavePosition;
+
+        
+    }
+
     private void OnMatchUpdated()
     {
-        GD.Print("OnMatchUpdated");
         ClearPlayerss();
         ClearCursors();
         Lobby lobby = GameManager.Instance.CurrentLobby;
@@ -208,21 +254,12 @@ public partial class FFAGame : Control
                 var playerLabel = new Label();
                 playerLabel.Text = memberName;
                 _playersContainer.AddChild(playerLabel);
-
-                // Add Cursor to GameArea
-                //var cursor = GD.Load<PackedScene>("res://Cursor.tscn");
-                //Cursor playerCursor = (Cursor)cursor.Instantiate();
-
-                //_cursorParty.AddChild(playerCursor);
-                //playerCursor.SetName(memberName);
-                //playerCursor.SetColour((int)lobby.Members[i].UserGameColor);
             }
         }
     }
 
     private void OnCursorPartyUpdated()
     {
-        GD.Print("OnCursorPartyUpdated");
         UpdateCursorList();
     }
 
@@ -253,7 +290,7 @@ public partial class FFAGame : Control
         json["op"] = "move";
         json["data"] = jsonData;
 
-        m_BCManager.SendRelayMessage(json);
+        _bcManager.SendRelayMessage(json);
     }
 
     private void OnMouseClicked(Vector2 mousePosition, MouseButton mouseButton)
@@ -269,6 +306,10 @@ public partial class FFAGame : Control
         json["op"] = "shockwave";
         json["data"] = jsonData;
 
-        m_BCManager.SendRelayMessage(json);
+        //Save position locally for us to spawn in UpdateShockwaves()
+        _localShockwavePositions.Add(mousePosition);
+        _localShockwaveCodes.Add(TeamCodes.all);
+
+        _bcManager.SendRelayMessage(json);
     }
 }
