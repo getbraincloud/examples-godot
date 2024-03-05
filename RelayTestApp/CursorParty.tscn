@@ -22,3 +22,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_iqtjy")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(400, 300)
 shape = SubResource("RectangleShape2D_2tt1o")
+
+[connection signal="mouse_entered" from="." to="." method="OnMouseEntered"]
+[connection signal="mouse_exited" from="." to="." method="OnMouseExited"]

@@ -20,10 +20,10 @@ public partial class Authentication : Control
         _passwordLine = GetNode<LineEdit>("AuthFields/PasswordLine");
         _authButton = GetNode<Button>("AuthFields/AuthButton");
 
-        _authButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.AttemptAuthentication));
+        _authButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnAuthenticateButtonPressed));
     }
 
-    private void AttemptAuthentication()
+    private void OnAuthenticateButtonPressed()
     {
         // Verify fields
         string universalID = _universalIDLine.Text;

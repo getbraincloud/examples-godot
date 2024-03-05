@@ -120,6 +120,10 @@ public partial class FFAGame : Control
             if (lobby.Members[i].Username == GameManager.Instance.CurrentUserInfo.Username)
             {
                 playerCursor.SetUserCursor(true);
+                int colourIndex = (int)GameManager.Instance.CurrentUserInfo.UserGameColor;
+                GD.Print("Colour index for path: " + colourIndex);
+
+                _cursorParty.SetCustomCursor("res://Cursors/arrow" + colourIndex + ".png");
             }
         }
     }

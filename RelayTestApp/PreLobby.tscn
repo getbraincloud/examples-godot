@@ -16,6 +16,12 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_d8233")
 
+[node name="CurrentUserLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Welcome, "
+horizontal_alignment = 1
+
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 2
 
