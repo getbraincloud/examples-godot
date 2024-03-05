@@ -15,8 +15,6 @@ public partial class Shockwave : Sprite2D
 
     private void StartAnimating()
     {
-        GD.Print("Start Animating");
-
         Modulate = new Color
         (
             Modulate.R,

@@ -25,11 +25,6 @@ public partial class CursorParty : Area2D
         _gameAreaPanel = GetNode<Panel>("GameAreaPanel");
         SizeX = _gameAreaPanel.Size.X;
         SizeY = _gameAreaPanel.Size.Y;
-
-        if (MouseInGameArea())
-        {
-            OnMouseEntered();
-        }
     }
 
     public override void _Input(InputEvent @event)
@@ -72,6 +67,10 @@ public partial class CursorParty : Area2D
     public void SetCustomCursor(string cursorPath)
     {
         _userCursor = ResourceLoader.Load(cursorPath);
+        if(MouseInGameArea() )
+        {
+            OnMouseEntered();
+        }
     }
 
     /// <summary>
