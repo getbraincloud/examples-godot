@@ -45,8 +45,8 @@ public partial class BCManager : Node
     // brainCloud app IDs
     // BrainCloud constants
     private string url = "https://api.internal.braincloudservers.com/dispatcherv2";
-    private string appId = "23649";
-    private string secretKey = "a754a2c0-72d9-46ce-9fdf-18e9c19a556c";
+    private string appId = "";
+    private string secretKey = "";
     private string version = "1.0.0";
 
     public override void _Ready()
@@ -130,7 +130,7 @@ public partial class BCManager : Node
 		};
 
 		// Real-time Tech (RTT) must be checked on the dashboard, under Design | Core App Info | Advanced Settings.
-		_brainCloud.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, enableRTTSuccessCallback, enableRTTFailureCallback);
+		_brainCloud.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, enableRTTSuccessCallback, OnRTTDisconnected);
 	}
 
     public void LeaveGame()
@@ -176,7 +176,14 @@ public partial class BCManager : Node
         _brainCloud.RelayService.Send(in_data, to_netID, in_reliable, in_ordered, in_channel);
     }
 
-	private void HandlePlayerState(string jsonResponse, object cobject)
+    private void OnRTTDisconnected(int status, int reasonCode, string jsonError, object cbObject)
+    {
+        if (jsonError == "DisableRTT Called") return; // Ignore
+
+        LeaveGame();
+    }
+
+    private void HandlePlayerState(string jsonResponse, object cobject)
 	{
 		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
 		var data = response["data"] as Dictionary<string, object>;

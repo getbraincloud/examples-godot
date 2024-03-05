@@ -83,11 +83,14 @@ public partial class FFALobby : Control
         }
     }
 
-    public void AddLobbyMember(string name, GameManager.GameColors colour)
+    public void AddLobbyMember(string name, GameManager.GameColors colour, bool memberIsHost)
     {
-        var lobbyMemberLabel = new Label();
-        lobbyMemberLabel.Text = name;
-        _lobbyMembersContainer.AddChild(lobbyMemberLabel);
+        var lobbyMemberScene = GD.Load<PackedScene>("res://LobbyMember.tscn");
+        LobbyMember lobbyMember = (LobbyMember)lobbyMemberScene.Instantiate();
+        _lobbyMembersContainer.AddChild(lobbyMember);
+        lobbyMember.SetName(name);
+        lobbyMember.SetColour(colour);
+        lobbyMember.SetHostIcon(memberIsHost);
     }
 
     public void ClearLobbyMembers()

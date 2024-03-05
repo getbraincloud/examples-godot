@@ -31,5 +31,6 @@ public partial class Cursor : Area2D
 	public void SetUserCursor(bool userCursor)
 	{
 		this._userCursor = userCursor;
+		Hide();
 	}
 }

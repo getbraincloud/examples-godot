@@ -18,13 +18,18 @@ public partial class CursorParty : Area2D
 
     private Vector2 _mousePos;
 
-    private Cursor _userCursor;
+    private Resource _userCursor;
 
     public override void _Ready()
     {
         _gameAreaPanel = GetNode<Panel>("GameAreaPanel");
         SizeX = _gameAreaPanel.Size.X;
         SizeY = _gameAreaPanel.Size.Y;
+
+        if (MouseInGameArea())
+        {
+            OnMouseEntered();
+        }
     }
 
     public override void _Input(InputEvent @event)
@@ -64,9 +69,9 @@ public partial class CursorParty : Area2D
         return _gameAreaPanel.GetGlobalRect();
     }
 
-    public void SetUserCursor(Cursor userCursor)
+    public void SetCustomCursor(string cursorPath)
     {
-        _userCursor = userCursor;
+        _userCursor = ResourceLoader.Load(cursorPath);
     }
 
     /// <summary>
@@ -86,5 +91,15 @@ public partial class CursorParty : Area2D
         }
 
         return false;
+    }
+
+    private void OnMouseEntered()
+    {
+        Input.SetCustomMouseCursor(_userCursor);
+    }
+
+    private void OnMouseExited()
+    {
+        Input.SetCustomMouseCursor(null);
     }
 }

@@ -121,6 +121,8 @@ public partial class Main : Control
 	{
 		if(_ffaLobby != null)
 		{
+			bool memberIsHost = false;
+
 			if (GameManager.Instance.Mode == GameManager.GameMode.FreeForAll)
 			{
 				_ffaLobby.ShowStartButton(GameManager.Instance.IsLocalUserHost());
@@ -129,17 +131,18 @@ public partial class Main : Control
 				Lobby lobby = GameManager.Instance.CurrentLobby;
 				for (int i = 0; i < lobby.Members.Count; i++)
 				{
+					memberIsHost = false;
 					if (lobby.Members[i].IsAlive)
 					{
 						string memberName = lobby.Members[i].Username;
 						if (lobby.Members[i].IsHost)
 						{
-							memberName += " (HOST)";
+							memberIsHost = true;
 						}
 
 						GameManager.GameColors memberColour = lobby.Members[i].UserGameColor;
 
-						_ffaLobby.AddLobbyMember(memberName, memberColour);
+						_ffaLobby.AddLobbyMember(memberName, memberColour, memberIsHost);
 					}
 				}
 			}

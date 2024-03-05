@@ -9,6 +9,7 @@ public partial class PreLobby : VBoxContainer
 
     private BCManager _bcManager;
 
+    private Label _currentUserLabel;
     private OptionButton _lobbyTypeOptionButton;
     private Button _logOutButton;
     private Button _playButton;
@@ -17,8 +18,13 @@ public partial class PreLobby : VBoxContainer
     {
         _bcManager = GetNode<BCManager>("/root/BCManager");
 
+        _currentUserLabel = GetNode<Label>("CurrentUserLabel");
+        _currentUserLabel.Text = "Welcome, " + GameManager.Instance.CurrentUserInfo.Username;
+
         _lobbyTypeOptionButton = GetNode<OptionButton>("HBoxContainer/LobbyOptionButton");
+
         _logOutButton = GetNode<Button>("MenuButtons/LogOutButton");
+
         _playButton = GetNode<Button>("MenuButtons/PlayButton");
         _playButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnPlayClicked));
     }
