@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3 uid="uid://djtdbpqfmhtqh"]
+
+[ext_resource type="Texture2D" uid="uid://bikjuim8dl262" path="res://Art/circle.png" id="1_wbokx"]
+[ext_resource type="Script" path="res://Shockwave.cs" id="2_mib2o"]
+
+[node name="Shockwave" type="Sprite2D"]
+texture = ExtResource("1_wbokx")
+script = ExtResource("2_mib2o")
