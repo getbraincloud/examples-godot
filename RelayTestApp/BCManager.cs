@@ -43,8 +43,7 @@ public partial class BCManager : Node
 	private bool _presentWhileStarted;
 
     // brainCloud app IDs
-    // BrainCloud constants
-    private string url = "https://api.internal.braincloudservers.com/dispatcherv2";
+    private string url = "https://api.braincloudservers.com/dispatcherv2";
     private string appId = "";
     private string secretKey = "";
     private string version = "1.0.0";
@@ -140,6 +139,11 @@ public partial class BCManager : Node
         _brainCloud.RelayService.Disconnect();
         _brainCloud.RTTService.DeregisterAllRTTCallbacks();
         _brainCloud.RTTService.DisableRTT();
+
+        GameManager.Instance.CurrentLobby = null;
+        GameManager.Instance.CurrentServer = null;
+        GameManager.Instance.IsReady = false;
+        GameManager.Instance.CurrentUserInfo.IsAlive = false;
 
         EmitSignal(SignalName.LeaveLobbyReady);
     }
