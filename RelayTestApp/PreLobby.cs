@@ -6,6 +6,8 @@ public partial class PreLobby : VBoxContainer
 {
     [Signal]
     public delegate void FindLobbyRequestedEventHandler();
+    [Signal]
+    public delegate void LogOutRequestedEventHandler();
 
     private BCManager _bcManager;
 
@@ -24,9 +26,16 @@ public partial class PreLobby : VBoxContainer
         _lobbyTypeOptionButton = GetNode<OptionButton>("HBoxContainer/LobbyOptionButton");
 
         _logOutButton = GetNode<Button>("MenuButtons/LogOutButton");
+        _logOutButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLogOutClicked));
 
         _playButton = GetNode<Button>("MenuButtons/PlayButton");
         _playButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnPlayClicked));
+    }
+
+    private void OnLogOutClicked()
+    {
+        EmitSignal(SignalName.LogOutRequested);
+        _bcManager.LogOut();
     }
 
     private void OnPlayClicked()

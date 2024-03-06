@@ -16,6 +16,8 @@ public partial class BCManager : Node
 	public delegate void AuthenticationRequestCompletedEventHandler();
 	[Signal]
 	public delegate void AuthenticationRequestFailedEventHandler();
+    [Signal]
+    public delegate void LogoutRequestSuccessEventHandler();
 	[Signal]
 	public delegate void FoundLobbyEventHandler();
 	[Signal]
@@ -42,7 +44,7 @@ public partial class BCManager : Node
 
 	private bool _presentWhileStarted;
 
-    // brainCloud app IDs
+    // TODO: add you brainCloud app IDs
     private string url = "https://api.braincloudservers.com/dispatcherv2";
     private string appId = "";
     private string secretKey = "";
@@ -76,6 +78,21 @@ public partial class BCManager : Node
         GameManager.Instance.CurrentUserInfo.Username = universalID;
 		_brainCloud.AuthenticateUniversal(universalID, password, true, HandlePlayerState, failureCallback);
 	}
+
+    public void LogOut()
+    {
+        SuccessCallback successCallback = (response, cbObject) =>
+        {
+            GD.Print(string.Format("Success | {0}", response));
+            EmitSignal(SignalName.LogoutRequestSuccess);
+        };
+        FailureCallback failureCallback = (status, code, error, cbObject) =>
+        {
+            GD.Print(string.Format("Failed | {0}  {1}  {2}", status, code, error));
+        };
+
+        _brainCloud.Logout(true, successCallback, failureCallback);
+    }
 
 	public void FindLobby(string lobbyType)
 	{

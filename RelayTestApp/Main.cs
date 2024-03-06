@@ -30,14 +30,12 @@ public partial class Main : Control
 		_bcManager.Connect(BCManager.SignalName.LeaveLobbyReady, new Callable(this, MethodName.OnLeaveLobbyReady));
 		_bcManager.Connect(BCManager.SignalName.MatchEnded, new Callable(this, MethodName.OnMatchEnded));
 		_bcManager.Connect(BCManager.SignalName.StartingMatch, new Callable(this, MethodName.OnStartMatchRequested));
+		_bcManager.Connect(BCManager.SignalName.LogoutRequestSuccess, new Callable(this, MethodName.OnLogoutSuccess));
 
 		m_CurrentSceneContainer = GetNode<MarginContainer>("CurrentSceneContainer");
 
 		// Go to Authentication Scene first
-		var authenticationScene = GD.Load<PackedScene>("res://Authentication.tscn");
-		_authenticationScene = (Authentication)authenticationScene.Instantiate();
-		ChangeScene(_authenticationScene);
-		_authenticationScene.Connect(Authentication.SignalName.AuthenticationRequested, new Callable(this, MethodName.OnAuthenticationRequested));
+		GoToAuthentication();
 	}
 
 	private void ChangeScene(Node scene)
@@ -52,12 +50,21 @@ public partial class Main : Control
 		m_CurrentSceneContainer.AddChild(_currentScene);
 	}
 
+	private void GoToAuthentication()
+	{
+        var authenticationScene = GD.Load<PackedScene>("res://Authentication.tscn");
+        _authenticationScene = (Authentication)authenticationScene.Instantiate();
+        ChangeScene(_authenticationScene);
+        _authenticationScene.Connect(Authentication.SignalName.AuthenticationRequested, new Callable(this, MethodName.OnAuthenticationRequested));
+    }
+
 	private void GoToPreLobby()
 	{
         var preLobbyScene = GD.Load<PackedScene>("res://PreLobby.tscn");
         _preLobby = (PreLobby)preLobbyScene.Instantiate();
         ChangeScene(_preLobby);
         _preLobby.Connect(PreLobby.SignalName.FindLobbyRequested, new Callable(this, MethodName.OnFindLobbyRequested));
+		_preLobby.Connect(PreLobby.SignalName.LogOutRequested, new Callable(this, MethodName.OnLogOutRequested));
     }
 
 	private void GoToLobby()
@@ -99,6 +106,19 @@ public partial class Main : Control
 	private void OnAuthenticated()
 	{
 		GoToPreLobby();
+	}
+
+	private void OnLogOutRequested()
+	{
+        var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
+        _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
+        _loadingScreen.SetLoadingMessage("Logging Out . . .");
+        ChangeScene(_loadingScreen);
+    }
+
+	private void OnLogoutSuccess()
+	{
+		GoToAuthentication();
 	}
 
 	private void OnFindLobbyRequested()
