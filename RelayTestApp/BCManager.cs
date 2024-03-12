@@ -33,7 +33,7 @@ public partial class BCManager : Node
     [Signal]
     public delegate void FoundGameInProgressEventHandler();
     [Signal]
-    public delegate void LeaveLobbyReadyEventHandler();
+    public delegate void GameClosedEventHandler();
     [Signal]
     public delegate void MatchEndedEventHandler();
     [Signal]
@@ -149,7 +149,7 @@ public partial class BCManager : Node
 		_brainCloud.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, enableRTTSuccessCallback, OnRTTDisconnected);
 	}
 
-    public void LeaveGame()
+    public void CloseGame()
     {
         _brainCloud.RelayService.DeregisterRelayCallback();
         _brainCloud.RelayService.DeregisterSystemCallback();
@@ -157,12 +157,7 @@ public partial class BCManager : Node
         _brainCloud.RTTService.DeregisterAllRTTCallbacks();
         _brainCloud.RTTService.DisableRTT();
 
-        GameManager.Instance.CurrentLobby = null;
-        GameManager.Instance.CurrentServer = null;
-        GameManager.Instance.IsReady = false;
-        GameManager.Instance.CurrentUserInfo.IsAlive = false;
-
-        EmitSignal(SignalName.LeaveLobbyReady);
+        EmitSignal(SignalName.GameClosed);
     }
 
     public void EndMatch()
@@ -201,7 +196,7 @@ public partial class BCManager : Node
     {
         if (jsonError == "DisableRTT Called") return; // Ignore
 
-        LeaveGame();
+        CloseGame();
     }
 
     private void HandlePlayerState(string jsonResponse, object cobject)
@@ -303,6 +298,7 @@ public partial class BCManager : Node
 
     private void OnLobbyEvent(string jsonResponse)
 	{
+        GD.Print("OnLobbyEvent");
         Dictionary<string, object> response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
         Dictionary<string, object> jsonData = response["data"] as Dictionary<string, object>;
 
@@ -329,7 +325,7 @@ public partial class BCManager : Node
                         if ((int)reason["code"] != ReasonCodes.RTT_ROOM_READY)
                         {
                             // Disbanded for any other reason than ROOM_READY, means we failed to launch the game.
-                            LeaveGame();
+                            CloseGame();
                         }
 
                         break;

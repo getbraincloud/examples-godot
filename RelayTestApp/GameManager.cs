@@ -101,4 +101,29 @@ public partial class GameManager : Node
                 return new Color(0, 0, 0);
         }
     }
+
+    public void ResetData()
+    {
+        CurrentLobby = null;
+        CurrentServer = null;
+        IsReady = false;
+
+        //foreach (Shockwave shockwave in Shockwaves)
+        //{
+        //    if (shockwave != null)
+        //    {
+        //        try
+        //        {
+        //            shockwave.QueueFree();
+        //        }
+        //        catch (ObjectDisposedException)
+        //        {
+        //            GD.Print("Shockwave object disposed . . .");
+        //        }
+        //    }
+        //}
+        //Shockwaves = new List<Shockwave>();
+        CurrentUserInfo.IsAlive = false;
+        CurrentUserInfo.MousePosition = Vector2.Zero;
+    }
 }

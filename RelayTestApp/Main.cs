@@ -18,6 +18,7 @@ public partial class Main : Control
 	private BCManager _bcManager;
 
 	private bool _findingMatch;
+	private bool _findingLobby;
 
 	public override void _Ready()
 	{
@@ -27,8 +28,7 @@ public partial class Main : Control
 		_bcManager.Connect(BCManager.SignalName.LobbyUpdated, new Callable(this, MethodName.OnLobbyUpdated));
 		_bcManager.Connect(BCManager.SignalName.ConnectedToRelay, new Callable(this, MethodName.OnConnectedToRelay));
 		_bcManager.Connect(BCManager.SignalName.FoundGameInProgress, new Callable(this, MethodName.OnFoundGameInProgress));
-		_bcManager.Connect(BCManager.SignalName.LeaveLobbyReady, new Callable(this, MethodName.OnLeaveLobbyReady));
-		_bcManager.Connect(BCManager.SignalName.MatchEnded, new Callable(this, MethodName.OnMatchEnded));
+		_bcManager.Connect(BCManager.SignalName.GameClosed, new Callable(this, MethodName.OnGameClosed));
 		_bcManager.Connect(BCManager.SignalName.StartingMatch, new Callable(this, MethodName.OnStartMatchRequested));
 		_bcManager.Connect(BCManager.SignalName.LogoutRequestSuccess, new Callable(this, MethodName.OnLogoutSuccess));
 
@@ -92,7 +92,7 @@ public partial class Main : Control
         _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
         _loadingScreen.SetLoadingMessage("Disconnecting . . .");
         ChangeScene(_loadingScreen);
-        _bcManager.LeaveGame();
+        _bcManager.CloseGame();
     }
 
 	private void OnAuthenticationRequested()
@@ -127,12 +127,14 @@ public partial class Main : Control
         _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
         _loadingScreen.SetLoadingMessage("Finding Lobby . . .");
         ChangeScene(_loadingScreen);
+		_findingLobby = true;
     }
 
 	private void OnLobbyFound()
 	{
-		if(!_findingMatch)
+		if(_findingLobby)
 		{
+			_findingLobby = false;
 			GoToLobby();
         }
 	}
@@ -176,23 +178,31 @@ public partial class Main : Control
 		Disconnect();
 	}
 
-	private void OnLeaveLobbyReady()
+	private void OnGameClosed()
 	{
 		GoToPreLobby();
 	}
 
-	private void OnMatchEnded()
+	private void OnEndMatchRequested()
 	{
         var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
         _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
         _loadingScreen.SetLoadingMessage("Ending Match . . .");
         ChangeScene(_loadingScreen);
+        _ffaGame = null;
+		_findingLobby = true;
+		_bcManager.EndMatch();
     }
 
 	private void OnLeaveMatchRequested()
 	{
-		_ffaGame = null;
-		Disconnect();
+        var loadingScreen = GD.Load<PackedScene>("res://LoadingScreen.tscn");
+        _loadingScreen = (LoadingScreen)loadingScreen.Instantiate();
+        _loadingScreen.SetLoadingMessage("Leaving Match . . .");
+        ChangeScene(_loadingScreen);
+        _ffaGame = null;
+		_bcManager.CloseGame();
+		GameManager.Instance.ResetData();
 	}
 
 	private void OnFoundGameInProgress()
@@ -221,6 +231,7 @@ public partial class Main : Control
 
 		_ffaGame.ShowEndMatch(GameManager.Instance.IsLocalUserHost());
 
+		_ffaGame.Connect(FFAGame.SignalName.EndMatchRequested, new Callable(this, MethodName.OnEndMatchRequested));
 		_ffaGame.Connect(FFAGame.SignalName.LeaveMatchRequested, new Callable(this, MethodName.OnLeaveMatchRequested));
 		_findingMatch = false;
 	}

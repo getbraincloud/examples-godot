@@ -6,6 +6,8 @@ using static GameManager;
 public partial class FFAGame : Control
 {
     [Signal]
+    public delegate void EndMatchRequestedEventHandler();
+    [Signal]
     public delegate void LeaveMatchRequestedEventHandler();
 
     private BCManager _bcManager;
@@ -51,20 +53,31 @@ public partial class FFAGame : Control
         UpdateShockwaves();
     }
 
+    /// <summary>
+    /// Set the End Match button's visibility.
+    /// </summary>
+    /// <param name="show">If the user is the Host, this should be true and the button should be visible</param>
     public void ShowEndMatch(bool show)
     {
         if(show) _endMatchButton.Show();
+        else _endMatchButton?.Hide();
     }
 
+    /// <summary>
+    /// Add label with lobby member's name and colour to the scene.
+    /// </summary>
+    /// <param name="name">Lobby member's name</param>
+    /// <param name="colour">Lobby member's colour index</param>
     public void AddPlayer(string name, GameManager.GameColors colour)
     {
         var playerLabel = new Label();
         playerLabel.Text = name;
+        // TODO:  colour
         _playersContainer.AddChild(playerLabel);
     }
 
     /// <summary>
-    /// Remove all player name Labels
+    /// Remove all lobby member labels from the scene.
     /// </summary>
     public void ClearPlayerss()
     {
@@ -130,7 +143,7 @@ public partial class FFAGame : Control
 
     private void OnEndMatchButtonPressed()
     {
-        _bcManager.EndMatch();
+        EmitSignal(SignalName.EndMatchRequested);
     }
 
     private void OnLeaveMatchButtonPressed()
@@ -162,6 +175,9 @@ public partial class FFAGame : Control
         }
     }
 
+    /// <summary>
+    /// Create Shockwave instances to be added to the Cursor Party scene.
+    /// </summary>
     private void UpdateShockwaves()
     {
         Lobby lobby = GameManager.Instance.CurrentLobby;
