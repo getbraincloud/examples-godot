@@ -392,8 +392,11 @@ public partial class BCManager : Node
                     member.ShockwavePositions.Add(position);
                     if (data.ContainsKey("teamCode"))
                     {
-                        TeamCodes shockwaveCode = (TeamCodes)data["teamCode"];
-                        member.ShockwaveTeamCodes.Add(shockwaveCode);
+                        string teamCode = (string)data["teamCode"];
+                        if (Enum.TryParse(teamCode, out TeamCodes newTeamCode))
+                        {
+                            member.ShockwaveTeamCodes.Add(newTeamCode);
+                        }
 
                         TeamCodes instigatorCode = (TeamCodes)data["instigator"];
                         member.InstigatorTeamCodes.Add(instigatorCode);
