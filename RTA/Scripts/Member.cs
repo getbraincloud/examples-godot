@@ -36,7 +36,7 @@ public partial class Member : Sprite2D
     public void SetColour(int colourIndex)
     {
         // Set texture (arrow/cursor colour)
-        Texture = (Texture2D)GD.Load("res://art/arrow" + colourIndex + ".png");
+        Texture = GD.Load<Texture2D>("Art/Cursors/arrow" + colourIndex + ".png");
 
         // Set name text colour
         _nameLabel.AddThemeColorOverride("font_color", Main.Colours[colourIndex]);

@@ -234,7 +234,7 @@ public partial class Main : Node
 		_matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
 
 		_cursorParty = GetNode<CursorParty>("ScreenContainer/MatchScreen/MatchContainer/GameSide/GameArea/CursorParty");
-		_cursorParty.SetCustomCursor("res://art/arrow" + _userColourIndex + ".png");
+		_cursorParty.SetCustomCursor("Art/Cursors/arrow" + _userColourIndex + ".png");
 
 		_playing = true;
 
@@ -351,7 +351,7 @@ public partial class Main : Node
 			// If no match was found, create a new Member instance
 			GD.Print("Creating new Member");
 
-			var memberScene = GD.Load<PackedScene>("res://Scenes/Member.tscn");
+			var memberScene = GD.Load<PackedScene>("Scenes/Member.tscn");
 			Member newMember = (Member)memberScene.Instantiate();
 			_cursorParty.AddChild(newMember);
 			_matchMembers.Add(newMember);

@@ -41,7 +41,7 @@ public partial class Shockwave : Sprite2D
             Modulate.R,
             Modulate.G,
             Modulate.B,
-            255 // resetting alpha
+            255
         );
 
         Ripple();
