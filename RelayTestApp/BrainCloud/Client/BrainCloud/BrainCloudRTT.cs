@@ -8,6 +8,9 @@ namespace BrainCloud
 
 using BrainCloud.Internal;
 
+    using Godot;
+
+
     public class BrainCloudRTT
     {
         /// <summary>
