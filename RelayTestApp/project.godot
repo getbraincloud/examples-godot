@@ -10,21 +10,20 @@ config_version=5
 
 [application]
 
-config/name="RelayTestApp"
-run/main_scene="res://Main.tscn"
+config/name="Relay Test App"
+run/main_scene="res://Scenes/Main.tscn"
 config/features=PackedStringArray("4.1", "C#", "Forward Plus")
-config/icon="res://logobc-app-icon-rounded_crop.png"
+config/icon="res://Art/logobc-app-icon-rounded_crop.png"
 
-[autoload]
-
-BCManager="*res://BCManager.cs"
-GameManager="*res://GameManager.cs"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 
+window/stretch/mode="viewport"
+
 [dotnet]
 
-project/assembly_name="RelayTestApp"
+project/assembly_name="RTA"
+
