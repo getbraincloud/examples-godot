@@ -7,7 +7,9 @@ namespace BrainCloud
 {
 
 using BrainCloud.Internal;
+
     using Godot;
+
 
     public class BrainCloudRTT
     {
@@ -130,7 +132,6 @@ using BrainCloud.Internal;
         /// </summary>
         public void RegisterRTTLobbyCallback(RTTCallback in_callback)
         {
-            GD.Print("Registering lobby callback");
             m_commsLayer.RegisterRTTCallback(ServiceName.Lobby, in_callback);
         }
 
