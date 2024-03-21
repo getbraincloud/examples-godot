@@ -1,0 +1,144 @@
+[gd_scene load_steps=10 format=3 uid="uid://bhvjmka37cf3b"]
+
+[ext_resource type="Script" path="res://Scripts/LobbyScreen.cs" id="1_hh4cg"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ecjg6"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b3rt6"]
+bg_color = Color(0.333333, 0.254902, 0.372549, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r01fx"]
+bg_color = Color(0.392157, 0.411765, 0.392157, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mvd8u"]
+bg_color = Color(0.843137, 0.45098, 0.333333, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7ituh"]
+bg_color = Color(0.313726, 0.54902, 0.843137, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_e7wfu"]
+bg_color = Color(0.392157, 0.72549, 0.392157, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_16y8i"]
+bg_color = Color(0.901961, 0.784314, 0.431373, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a185w"]
+bg_color = Color(0.862745, 0.960784, 1, 1)
+
+[node name="LobbyScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hh4cg")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -170.5
+offset_top = -35.0
+offset_right = 170.5
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColourButtons" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="BlackButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_ecjg6")
+text = "0"
+
+[node name="PurpleButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_b3rt6")
+text = "1"
+
+[node name="GreyButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_r01fx")
+text = "2"
+
+[node name="OrangeButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_mvd8u")
+text = "3"
+
+[node name="BlueButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_7ituh")
+text = "4"
+
+[node name="GreenButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_e7wfu")
+text = "5"
+
+[node name="YellowButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_16y8i")
+text = "6"
+
+[node name="WhiteButton" type="Button" parent="VBoxContainer/ColourButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+theme_override_styles/normal = SubResource("StyleBoxFlat_a185w")
+text = "7"
+
+[node name="LobbyMembersContainer" type="VBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="LobbyButtons" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="LeaveButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+text = "LEAVE LOBBY"
+
+[node name="JoinButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+text = "JOIN MATCH"
+
+[node name="StartButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+text = "START MATCH"
+
+[connection signal="pressed" from="VBoxContainer/ColourButtons/BlackButton" to="." method="OnColourButtonPressed" binds= [0]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/PurpleButton" to="." method="OnColourButtonPressed" binds= [1]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/GreyButton" to="." method="OnColourButtonPressed" binds= [2]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/OrangeButton" to="." method="OnColourButtonPressed" binds= [3]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/BlueButton" to="." method="OnColourButtonPressed" binds= [4]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/GreenButton" to="." method="OnColourButtonPressed" binds= [5]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/YellowButton" to="." method="OnColourButtonPressed" binds= [6]]
+[connection signal="pressed" from="VBoxContainer/ColourButtons/WhiteButton" to="." method="OnColourButtonPressed" binds= [7]]
