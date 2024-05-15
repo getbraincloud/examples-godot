@@ -75,10 +75,19 @@ public partial class Main : Node
 		_brainCloudWrapper.RunCallbacks();
 	}
 
-	/// <summary>
-	/// Reset all scenes/screens, initialize brainCloud and display authentication screen.
-	/// </summary>
-	private void StartApp()
+    public override void _Notification(int what)
+    {
+        if(what == NotificationWMCloseRequest)
+		{
+			_brainCloudWrapper.Logout(false);
+			GetTree().Quit(); // default behaviour
+		}
+    }
+
+    /// <summary>
+    /// Reset all scenes/screens, initialize brainCloud and display authentication screen.
+    /// </summary>
+    private void StartApp()
 	{
 		// Reset scenes/screens
 		if (_currentScene != null)
@@ -612,7 +621,7 @@ public partial class Main : Node
 		};
 
 		// TODO:  implement different RTTConnectionTypes
-		_brainCloudWrapper.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, OnEnableRTTSuccess, OnMatchmakingFailed);
+		_brainCloudWrapper.RTTService.EnableRTT(OnEnableRTTSuccess, OnMatchmakingFailed);
 	}
 
 	/// <summary>
