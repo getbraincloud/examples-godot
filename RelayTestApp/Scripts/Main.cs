@@ -621,7 +621,7 @@ public partial class Main : Node
 		};
 
 		// TODO:  implement different RTTConnectionTypes
-		_brainCloudWrapper.RTTService.EnableRTT(RTTConnectionType.WEBSOCKET, OnEnableRTTSuccess, OnMatchmakingFailed);
+		_brainCloudWrapper.RTTService.EnableRTT(OnEnableRTTSuccess, OnMatchmakingFailed);
 	}
 
 	/// <summary>

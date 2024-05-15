@@ -793,6 +793,17 @@ using UnityEngine.Experimental.Networking;
             // and then dump the comms layer
             ResetCommunication();
         }
+        
+        internal void ClearAllRequests()
+        {
+            lock (_serviceCallsWaiting)
+            {
+                _serviceCallsWaiting.Clear();
+            }
+            
+            DisposeUploadHandler();
+            _activeRequest = null;
+        }
 
         // see BrainCloudClient.RetryCachedMessages() docs
         public void RetryCachedMessages()
@@ -1083,7 +1094,11 @@ using UnityEngine.Experimental.Networking;
                             // we are no longer authenticated
                             _isAuthenticated = false;
                             SessionID = "";
-                            _clientRef.AuthenticationService.ClearSavedProfileID();
+                            if(operation == ServiceOperation.FullReset.Value)
+                            {   
+                                _clientRef.AuthenticationService.ClearSavedProfileID();
+                            }
+                            
                             ResetErrorCache();
                         }
                         //either off of authenticate or identity call, be sure to save the profileId and sessionId
