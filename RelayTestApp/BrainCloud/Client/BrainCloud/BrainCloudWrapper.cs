@@ -2673,6 +2673,7 @@ public class BrainCloudWrapper
         string path = "user://" + prefix + WrapperData.FileName;
         string file = "";
         WrapperData _wrapperData = new WrapperData();
+
         if(Godot.FileAccess.FileExists(path)) 
         {
             Godot.FileAccess fileAccess = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
