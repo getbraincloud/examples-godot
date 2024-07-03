@@ -58,17 +58,17 @@ theme_override_font_sizes/font_size = 25
 text = "_Error finding/creating lobby"
 horizontal_alignment = 1
 
-[node name="MenuButtons" type="HBoxContainer" parent="VBoxContainer"]
+[node name="MenuButtons" type="VBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
-
-[node name="LogOutButton" type="Button" parent="VBoxContainer/MenuButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "LOG OUT"
 
 [node name="MatchMakeButton" type="Button" parent="VBoxContainer/MenuButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 text = "FIND/CREATE LOBBY"
+
+[node name="LogOutButton" type="Button" parent="VBoxContainer/MenuButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+text = "LOG OUT"

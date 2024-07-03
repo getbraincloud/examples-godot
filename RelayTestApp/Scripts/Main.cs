@@ -20,6 +20,8 @@ public partial class Main : Node
 		new Color("#e6c86e"),
 		new Color("#dcf5ff")
 	};
+	[Export(PropertyHint.File, "*.tscn")]
+	private string splatterScene;
 
 	// Screens / Scenes
 	private AuthenticationScreen _authenticationScreen;
@@ -380,11 +382,11 @@ public partial class Main : Node
 		yCoord *= 600;
 
 		// Create new Shockwave and add it to the list
-		var shockwave = GD.Load<PackedScene>("res://Scenes/Shockwave.tscn");
-		Shockwave newShockwave = (Shockwave)shockwave.Instantiate();
-		_cursorParty.AddChild(newShockwave); 
-		newShockwave.Position = (new Vector2(xCoord, yCoord));
-		newShockwave.Modulate = Colours[colourIndex];
+		var shockwave = GD.Load<PackedScene>(splatterScene);
+		Splatter newShockwave = (Splatter)shockwave.Instantiate();
+		_cursorParty.GetNode("SplatterMask").AddChild(newShockwave); 
+		newShockwave.Position = new Vector2(xCoord, yCoord);
+		newShockwave.SetColour(Colours[colourIndex]);
 	}
 
 	/// <summary>
@@ -1047,5 +1049,10 @@ public partial class Main : Node
 	private void OnLeaveMatchRequested()
 	{
 		OnLeaveLobbyRequested();
+	}
+
+	private void OnGetColoursCallback(string jsonResponse, object cbObject)
+	{
+
 	}
 }
