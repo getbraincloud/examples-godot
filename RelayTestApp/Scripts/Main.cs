@@ -74,19 +74,19 @@ public partial class Main : Node
 		_brainCloudWrapper.RunCallbacks();
 	}
 
-    public override void _Notification(int what)
-    {
-        if(what == NotificationWMCloseRequest)
+	public override void _Notification(int what)
+	{
+		if(what == NotificationWMCloseRequest)
 		{
 			_brainCloudWrapper.Logout(false);
 			GetTree().Quit(); // default behaviour
 		}
-    }
+	}
 
-    /// <summary>
-    /// Reset all scenes/screens, initialize brainCloud and display authentication screen.
-    /// </summary>
-    private void StartApp()
+	/// <summary>
+	/// Reset all scenes/screens, initialize brainCloud and display authentication screen.
+	/// </summary>
+	private void StartApp()
 	{
 		// Reset scenes/screens
 		if (_currentScene != null)
@@ -204,16 +204,16 @@ public partial class Main : Node
 		// Transition to lobby scene
 		ChangeScene(_lobbyScreen);
 
-        _lobbyScreen.UpdateLobbyMembers(_lobby);
+		_lobbyScreen.UpdateLobbyMembers(_lobby);
 
-        string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+		string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-        _lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
+		_lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
 
 		_matchMembers.Clear();
 
-        // Connect even listener(s)
-        _lobbyScreen.Connect(LobbyScreen.SignalName.ColourChanged, new Callable(this, MethodName.OnColourChanged));
+		// Connect even listener(s)
+		_lobbyScreen.Connect(LobbyScreen.SignalName.ColourChanged, new Callable(this, MethodName.OnColourChanged));
 		_lobbyScreen.Connect(LobbyScreen.SignalName.LeaveLobbyRequested, new Callable(this, MethodName.OnLeaveLobbyRequested));
 		_lobbyScreen.Connect(LobbyScreen.SignalName.JoinMatchRequested, new Callable(this, MethodName.OnJoinMatchRequested));
 		_lobbyScreen.Connect(LobbyScreen.SignalName.StartMatchRequested, new Callable(this, MethodName.OnStartMatchRequested));
@@ -230,19 +230,19 @@ public partial class Main : Node
 		// Transittion to match scene
 		ChangeScene(_matchScreen);
 
-        _matchScreen.UpdateLobbyMembers(_lobby);
+		_matchScreen.UpdateLobbyMembers(_lobby);
 
 		_cursorParty = GetNode<CursorParty>("ScreenContainer/MatchScreen/MatchContainer/GameSide/GameArea/CursorParty");
 		_cursorParty.SetCustomCursor("Art/Cursors/arrow" + _userColourIndex + ".png");
 
 		_playing = true;
 
-        string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+		string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-        _matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
+		_matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
 
-        // Connect event listener(s)
-        _matchScreen.Connect(MatchScreen.SignalName.EndMatchRequested, new Callable(this, MethodName.OnEndMatchRequested));
+		// Connect event listener(s)
+		_matchScreen.Connect(MatchScreen.SignalName.EndMatchRequested, new Callable(this, MethodName.OnEndMatchRequested));
 		_matchScreen.Connect(MatchScreen.SignalName.LeaveMatchRequested, new Callable(this, MethodName.OnLeaveMatchRequested));
 
 		_cursorParty.Connect(CursorParty.SignalName.MouseMoved, new Callable(this, MethodName.OnUserMoved));
@@ -521,7 +521,7 @@ public partial class Main : Node
 
 		FailureCallback OnLogOutFailed = (status, reasonCode, jsonError, cbObject) =>
 		{
-            GD.Print(string.Format("Log Out Failed:\n{0}  {1}  {2}", status, reasonCode, jsonError));
+			GD.Print(string.Format("Log Out Failed:\n{0}  {1}  {2}", status, reasonCode, jsonError));
 
 			GoToLobbySelectScreen();
 
@@ -533,10 +533,10 @@ public partial class Main : Node
 			{
 				OnError("Unknown LobbySelectScreen Error while trying to log out . . .");
 			}
-        };
+		};
 
 
-        _brainCloudWrapper.Logout(true, OnLogOutSuccess, OnLogOutFailed);
+		_brainCloudWrapper.Logout(true, OnLogOutSuccess, OnLogOutFailed);
 	}
 
 	/// <summary>
@@ -639,25 +639,25 @@ public partial class Main : Node
 		if (data.ContainsKey("lobby"))
 		{
 			_lobby = (Dictionary<string, object>)data["lobby"];
-            _lobbyID = (string)data["lobbyId"];
+			_lobbyID = (string)data["lobbyId"];
 
-            // Update lobby/match members list and host button visibility (only the lobby owner / host can start and end matches)
-            if (_lobbyScreen != null)
+			// Update lobby/match members list and host button visibility (only the lobby owner / host can start and end matches)
+			if (_lobbyScreen != null)
 			{
 				_lobbyScreen.UpdateLobbyMembers(_lobby);
 
-                string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+				string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-                _lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
-            }
+				_lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
+			}
 			if(_matchScreen != null)
 			{
 				_matchScreen.UpdateLobbyMembers(_lobby);
 
-                string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+				string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-                _matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
-            }
+				_matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
+			}
 
 			// There is now enough lobby data to display lobby screen (IF matchmaking was in progress)
 			if (_matchmaking)
@@ -832,8 +832,8 @@ public partial class Main : Node
 		{
 			var json = BrainCloud.JsonFx.Json.JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
 
-            string op = (string)json["op"];
-            string cxID = "";
+			string op = (string)json["op"];
+			string cxID = "";
 			if (json.ContainsKey("cxId"))
 			{
 				cxID = (string)json["cxId"];
@@ -1037,9 +1037,9 @@ public partial class Main : Node
 		_brainCloudWrapper.RelayService.EndMatch(extraJSON);
 
 		_matchmaking = true;
-        _userIsReady = false;
-        _userWasPresentSinceStart = false;
-    }
+		_userIsReady = false;
+		_userWasPresentSinceStart = false;
+	}
 
 	/// <summary>
 	/// Disconnect from RTT/Relay and return to LobbySelect Screen.
