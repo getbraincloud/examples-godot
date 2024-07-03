@@ -478,6 +478,7 @@ public partial class Main : Node
 		// TODO:  this will need to be modified if/when other authentication methods are implemented
 		// Update player name with ID used to log in
 		_brainCloudWrapper.PlayerStateService.UpdateName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(new string[]{"Colours"}, OnGetColoursCallback, null);
 	}
 
 	/// <summary>
@@ -1053,6 +1054,16 @@ public partial class Main : Node
 
 	private void OnGetColoursCallback(string jsonResponse, object cbObject)
 	{
+		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+		var data = response["data"] as Dictionary<string, object>;
+		var property = data["Colours"] as Dictionary<string, object>;
 
+		var value = property["value"] as string;
+		//"081175,902a96,cf3222,d67b10,5390ce,49b85d,d1d675,b8ced6"
+		string[] hexValues = value.Split(',');
+		for(int ii = 0; ii < hexValues.Length; ii++)
+		{
+			Colours[ii] = new Color(string.Concat("#", hexValues[ii]));
+		}
 	}
 }
