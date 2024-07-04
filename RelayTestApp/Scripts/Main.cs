@@ -9,6 +9,7 @@ using System.Text;
 
 public partial class Main : Node
 {
+	// Visuals
 	public static Color[] Colours =
 	{
 		new Color("#000000"),
@@ -22,6 +23,9 @@ public partial class Main : Node
 	};
 	[Export(PropertyHint.File, "*.tscn")]
 	private string splatterScene;
+	private float splatterLifespan;
+	private float splatterAppear;
+	private float splatterDisappear;
 
 	// Screens / Scenes
 	private AuthenticationScreen _authenticationScreen;
@@ -387,6 +391,8 @@ public partial class Main : Node
 		_cursorParty.GetNode("SplatterMask").AddChild(newShockwave); 
 		newShockwave.Position = new Vector2(xCoord, yCoord);
 		newShockwave.SetColour(Colours[colourIndex]);
+		newShockwave.SetLifespan(splatterLifespan);
+		newShockwave.SetAnimationDurations(splatterAppear, splatterDisappear);
 	}
 
 	/// <summary>
@@ -478,7 +484,9 @@ public partial class Main : Node
 		// TODO:  this will need to be modified if/when other authentication methods are implemented
 		// Update player name with ID used to log in
 		_brainCloudWrapper.PlayerStateService.UpdateName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
-		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(new string[]{"Colours"}, OnGetColoursCallback, null);
+
+		// Read global properties to determine the values that should be used for splatter visuals
+		GetSplatterProperties();
 	}
 
 	/// <summary>
@@ -1052,6 +1060,20 @@ public partial class Main : Node
 		OnLeaveLobbyRequested();
 	}
 
+	private void GetSplatterProperties()
+	{
+		string[] properties;
+
+		properties = new string[]{"Colours"};
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetColoursCallback, null);
+
+		properties = new string[] { "PaintLifespan" };
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetLifespanCallback, null);
+
+		properties = new string[] { "AppearDuration", "DisappearDuration" };
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetAnimDurationsCallback, null);
+	}
+
 	private void OnGetColoursCallback(string jsonResponse, object cbObject)
 	{
 		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
@@ -1065,5 +1087,28 @@ public partial class Main : Node
 		{
 			Colours[ii] = new Color(string.Concat("#", hexValues[ii]));
 		}
+	}
+
+	private void OnGetLifespanCallback(string jsonResponse, object cbObject)
+	{
+		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+		var data = response["data"] as Dictionary<string, object>;
+		var property = data["PaintLifespan"] as Dictionary<string, object>;
+		float value = Convert.ToSingle(property["value"]);
+		splatterLifespan = value;
+	}
+
+	private void OnGetAnimDurationsCallback(string jsonResponse, object cbObject)
+	{
+		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+		var data = response["data"] as Dictionary<string, object>;
+
+		var property = data["AppearDuration"] as Dictionary<string, object>;
+		float value = Convert.ToSingle(property["value"]);
+		splatterAppear = value;
+
+		property = data["DisappearDuration"] as Dictionary<string, object>;
+		value = Convert.ToSingle(property["value"]);
+		splatterDisappear = value;
 	}
 }

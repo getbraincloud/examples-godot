@@ -68,7 +68,7 @@ public partial class Splatter : Sprite2D
 			Modulate = SetAlpha(Modulate, 1.0f - Mathf.Pow(age / fadeDuration, 2));
 			await Task.Delay(10);
 		}
-		QueueFree();
+		CallDeferred(Node.MethodName.QueueFree);
 	}
 
 	private Color SetAlpha(Color oldColor, float newAlpha)
