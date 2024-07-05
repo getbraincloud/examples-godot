@@ -13,13 +13,13 @@ public partial class Main : Node
 	public static Color[] Colours =
 	{
 		new Color("#000000"),
-		new Color("#55415f"),
-		new Color("#646964"),
-		new Color("#d77355"),
-		new Color("#508cd7"),
-		new Color("#64b964"),
-		new Color("#e6c86e"),
-		new Color("#dcf5ff")
+		new Color("#ff00ff"),
+		new Color("#ff0000"),
+		new Color("#0000ff"),
+		new Color("#00ffff"),
+		new Color("#00ff00"),
+		new Color("#ffff00"),
+		new Color("#ffffff")
 	};
 	[Export(PropertyHint.File, "*.tscn")]
 	private string splatterScene;
