@@ -1,8 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://cr4osu72b77ds"]
+[gd_scene load_steps=3 format=3 uid="uid://bkr8a8rfvbcex"]
 
-[ext_resource type="Texture2D" uid="uid://0eyydvdjiunw" path="res://Art/circle.png" id="1_28iw8"]
 [ext_resource type="Script" path="res://Scripts/Shockwave.cs" id="2_t56ax"]
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_7dqkk"]
+load_path = "res://.godot/imported/circle.png-75aa8a8ef0a36174638fd55423573a40.ctex"
+
 [node name="Shockwave" type="Sprite2D"]
-texture = ExtResource("1_28iw8")
+texture = SubResource("CompressedTexture2D_7dqkk")
 script = ExtResource("2_t56ax")

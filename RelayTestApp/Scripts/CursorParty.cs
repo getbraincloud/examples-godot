@@ -16,12 +16,19 @@ public partial class CursorParty : Area2D
 
 	private Panel _gameAreaPanel;
 
+	private Member arrowRef;
+
 	public override void _Ready()
 	{
 		_gameAreaPanel = GetNode<Panel>("GameAreaPanel");
 		
 		Connect(SignalName.MouseEntered, new Callable(this, MethodName.OnMouseEntered));
 		Connect(SignalName.MouseExited, new Callable(this, MethodName.OnMouseExited));
+
+		arrowRef = (Member)GD.Load<PackedScene>("Scenes/Member.tscn").Instantiate();
+		AddChild(arrowRef);
+		arrowRef.SetName("");
+		arrowRef.SetCxID("");
 	}
 
 	public override void _Input(InputEvent @event)
@@ -51,17 +58,9 @@ public partial class CursorParty : Area2D
 		}
 	}
 
-	/// <summary>
-	/// Load/Set the arrow image used for this user's custom mouse cursor.
-	/// </summary>
-	/// <param name="cursorPath">string path to the arrow image associated with this user's colour index.</param>
-	public void SetCustomCursor(string cursorPath)
+	public override void _Process(double delta)
 	{
-		_userArrow = ResourceLoader.Load(cursorPath);
-		if (MouseInGameArea())
-		{
-			OnMouseEntered();
-		}
+		arrowRef.GlobalPosition = GetGlobalMousePosition();
 	}
 
 	/// <summary>
@@ -93,7 +92,8 @@ public partial class CursorParty : Area2D
 	/// </summary>
 	private void OnMouseEntered()
 	{
-		Input.SetCustomMouseCursor(_userArrow);
+		Input.MouseMode = Input.MouseModeEnum.Hidden;
+		arrowRef.Visible = true;
 	}
 
 	/// <summary>
@@ -101,6 +101,12 @@ public partial class CursorParty : Area2D
 	/// </summary>
 	private void OnMouseExited()
 	{
-		Input.SetCustomMouseCursor(null);
+		Input.MouseMode = Input.MouseModeEnum.Visible;
+		arrowRef.Visible = false;
+	}
+
+	public void SetUserColourIndex(int newIndex)
+	{
+		arrowRef.SetColour(newIndex);
 	}
 }

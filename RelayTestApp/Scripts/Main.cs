@@ -239,7 +239,7 @@ public partial class Main : Node
 		_matchScreen.UpdateLobbyMembers(_lobby);
 
 		_cursorParty = GetNode<CursorParty>("ScreenContainer/MatchScreen/MatchContainer/GameSide/GameArea/CursorParty");
-		_cursorParty.SetCustomCursor("Art/Cursors/arrow" + _userColourIndex + ".png");
+		_cursorParty.SetUserColourIndex(_userColourIndex);
 
 		_playing = true;
 
@@ -373,26 +373,26 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Create a Shockwave instance.
+	/// Create a Splatter instance.
 	/// </summary>
 	/// <param name="pos"></param>
 	/// <param name="colourIndex"></param>
-	private void CreateShockwave(Vector2 pos, int colourIndex)
+	private void CreateSplatter(Vector2 pos, int colourIndex)
 	{
-		// Normalize Shockwave position coordinates for an accurate position across different platforms/resolutions/screens
+		// Normalize Splatter position coordinates for an accurate position across different platforms/resolutions/screens
 		float xCoord = pos.X;
 		float yCoord = pos.Y;
 		xCoord *= 800;
 		yCoord *= 600;
 
-		// Create new Shockwave and add it to the list
-		var shockwave = GD.Load<PackedScene>(splatterScene);
-		Splatter newShockwave = (Splatter)shockwave.Instantiate();
-		_cursorParty.GetNode("SplatterMask").AddChild(newShockwave); 
-		newShockwave.Position = new Vector2(xCoord, yCoord);
-		newShockwave.SetColour(Colours[colourIndex]);
-		newShockwave.SetLifespan(splatterLifespan);
-		newShockwave.SetAnimationDurations(splatterAppear, splatterDisappear);
+		// Create new Splatter and add it to the list
+		var paintSplatter = GD.Load<PackedScene>(splatterScene);
+		Splatter newSplatter = (Splatter)paintSplatter.Instantiate();
+		_cursorParty.GetNode("SplatterMask").AddChild(newSplatter); 
+		newSplatter.Position = new Vector2(xCoord, yCoord);
+		newSplatter.SetColour(Colours[colourIndex]);
+		newSplatter.SetLifespan(splatterLifespan);
+		newSplatter.SetAnimationDurations(splatterAppear, splatterDisappear);
 	}
 
 	/// <summary>
@@ -826,7 +826,7 @@ public partial class Main : Node
 			
 			// The user clicked somewhere within the game area
 			case "shockwave":
-				CreateShockwave(new Vector2(xCoord, yCoord), (int)extra["colorIndex"]);
+				CreateSplatter(new Vector2(xCoord, yCoord), (int)extra["colorIndex"]);
 				break;
 			default:
 				break;
@@ -994,13 +994,13 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Triggered when the local user (this user) clicks within he game area. Create a shockwave at this position and send update to ALL other members.
+	/// Triggered when the local user (this user) clicks within he game area. Create a splatter at this position and send update to ALL other members.
 	/// </summary>
 	/// <param name="pos">Vector2 mouse click position.</param>
-	/// <param name="button">MouseButton value indicating which type of shockwave should be created.</param>
+	/// <param name="button">MouseButton value indicating which type of splatter should be created.</param>
 	private void OnUserClicked(Vector2 pos, MouseButton button)
 	{
-		// Create / Send the shockwave to match members
+		// Create / Send the splatter to match members
 		Dictionary<string, object> data = new Dictionary<string, object>()
 		{
 			{ "x", pos.X },
@@ -1013,22 +1013,22 @@ public partial class Main : Node
 			{ "data", data }
 		};
 
-		// TODO:  modify shockwave colour, etc. based on MouseButton when Team Mode is implemented
+		// TODO:  modify splatter colour, etc. based on MouseButton when Team Mode is implemented
 
 		string jsonString = BrainCloud.JsonFx.Json.JsonWriter.Serialize(json);
 
 		byte[] jsonBytes = { 0x0 };
 		jsonBytes = Encoding.ASCII.GetBytes(jsonString);
 
-		// We send the shockewave event as reliable because such action needs to be guaranteed
+		// We send the splatter event as reliable because such action needs to be guaranteed
 		bool reliable = true;
 		bool ordered = false;
 		int channel = BrainCloudRelay.CHANNEL_HIGH_PRIORITY_2;
 
 		_brainCloudWrapper.RelayService.SendToAll(jsonBytes, reliable, ordered, channel);
 
-		// Create the shockwave locally
-		CreateShockwave(pos, _userColourIndex);
+		// Create the splatter locally
+		CreateSplatter(pos, _userColourIndex);
 	}
 
 	/// <summary>

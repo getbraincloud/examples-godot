@@ -35,8 +35,8 @@ public partial class Member : Sprite2D
 	/// <param name="colourIndex">int representing the colour index. Used to select the arrow to be select which arrow should be used for the Texture.</param>
 	public void SetColour(int colourIndex)
 	{
-		// Set texture (arrow/cursor colour)
-		Texture = GD.Load<Texture2D>("Art/Cursors/arrow" + colourIndex + ".png");
+		// Set arrow/cursor colour
+		SelfModulate = Main.Colours[colourIndex];
 
 		// Set name text colour
 		_nameLabel.AddThemeColorOverride("font_color", Main.Colours[colourIndex]);
