@@ -1,6 +1,7 @@
-[gd_scene load_steps=10 format=3 uid="uid://bhvjmka37cf3b"]
+[gd_scene load_steps=11 format=3 uid="uid://bhvjmka37cf3b"]
 
 [ext_resource type="Script" path="res://Scripts/LobbyScreen.cs" id="1_hh4cg"]
+[ext_resource type="Script" path="res://Scripts/ColourSelectButton.cs" id="2_5fqbh"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ecjg6"]
 bg_color = Color(0, 0, 0, 1)
@@ -44,89 +45,101 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -170.5
-offset_top = -35.0
-offset_right = 170.5
-offset_bottom = 35.0
+offset_left = -240.0
+offset_top = -104.0
+offset_right = 240.0
+offset_bottom = 104.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="ColourButtons" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 
-[node name="BlackButton" type="Button" parent="VBoxContainer/ColourButtons"]
+[node name="BlueButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_ecjg6")
 text = "0"
+script = ExtResource("2_5fqbh")
 
 [node name="PurpleButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_b3rt6")
-text = "1"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 1
 
-[node name="GreyButton" type="Button" parent="VBoxContainer/ColourButtons"]
+[node name="RedButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_r01fx")
-text = "2"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 2
 
 [node name="OrangeButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_mvd8u")
-text = "3"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 3
 
-[node name="BlueButton" type="Button" parent="VBoxContainer/ColourButtons"]
+[node name="CyanButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_7ituh")
-text = "4"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 4
 
 [node name="GreenButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_e7wfu")
-text = "5"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 5
 
 [node name="YellowButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_16y8i")
-text = "6"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 6
 
 [node name="WhiteButton" type="Button" parent="VBoxContainer/ColourButtons"]
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 theme_override_styles/normal = SubResource("StyleBoxFlat_a185w")
-text = "7"
+text = "0"
+script = ExtResource("2_5fqbh")
+colourIndex = 7
 
 [node name="LobbyMembersContainer" type="VBoxContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 
-[node name="LobbyButtons" type="HBoxContainer" parent="VBoxContainer"]
+[node name="LobbyButtons" type="VBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
-
-[node name="LeaveButton" type="Button" parent="VBoxContainer/LobbyButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "LEAVE LOBBY"
-
-[node name="JoinButton" type="Button" parent="VBoxContainer/LobbyButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "JOIN MATCH"
 
 [node name="StartButton" type="Button" parent="VBoxContainer/LobbyButtons"]
 layout_mode = 2
@@ -134,11 +147,14 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 text = "START MATCH"
 
-[connection signal="pressed" from="VBoxContainer/ColourButtons/BlackButton" to="." method="OnColourButtonPressed" binds= [0]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/PurpleButton" to="." method="OnColourButtonPressed" binds= [1]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/GreyButton" to="." method="OnColourButtonPressed" binds= [2]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/OrangeButton" to="." method="OnColourButtonPressed" binds= [3]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/BlueButton" to="." method="OnColourButtonPressed" binds= [4]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/GreenButton" to="." method="OnColourButtonPressed" binds= [5]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/YellowButton" to="." method="OnColourButtonPressed" binds= [6]]
-[connection signal="pressed" from="VBoxContainer/ColourButtons/WhiteButton" to="." method="OnColourButtonPressed" binds= [7]]
+[node name="JoinButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+text = "JOIN MATCH"
+
+[node name="LeaveButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 30
+text = "LEAVE LOBBY"

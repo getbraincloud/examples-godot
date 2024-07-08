@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://cbwlf2i5bcnf1"]
+
+[ext_resource type="Texture2D" uid="uid://cuuohc8fvutka" path="res://Art/PaintSplatter1.png" id="1_j7qgs"]
+[ext_resource type="Script" path="res://Scripts/Splatter.cs" id="2_v5w4b"]
+
+[node name="Splatter" type="Sprite2D"]
+scale = Vector2(0.255, 0.255)
+texture = ExtResource("1_j7qgs")
+region_rect = Rect2(-42.5, -42.5, 85, 85)
+script = ExtResource("2_v5w4b")

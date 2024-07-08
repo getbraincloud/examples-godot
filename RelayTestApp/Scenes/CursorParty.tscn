@@ -20,3 +20,9 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_13i4h")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(400, 300)
 shape = SubResource("RectangleShape2D_45hdd")
+
+[node name="SplatterMask" type="Control" parent="."]
+clip_contents = true
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 3
+anchors_preset = 0

@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8yff817ycat2"]
+[gd_scene load_steps=3 format=3 uid="uid://b8yff817ycat2"]
 
+[ext_resource type="Texture2D" uid="uid://c1tyg1pg0ktt6" path="res://Art/arrow.png" id="1_mrp6s"]
 [ext_resource type="Script" path="res://Scripts/Member.cs" id="2_7qfej"]
 
 [node name="Member" type="Sprite2D"]
+texture = ExtResource("1_mrp6s")
+offset = Vector2(15, 26)
 script = ExtResource("2_7qfej")
 
 [node name="Name" type="Label" parent="."]
@@ -11,10 +14,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -59.0
-offset_top = -5.0
-offset_right = -5.0
-offset_bottom = 21.0
+offset_left = -50.5
+offset_top = 18.5
+offset_right = 16.5
+offset_bottom = 49.5
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 20

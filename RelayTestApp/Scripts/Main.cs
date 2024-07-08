@@ -9,17 +9,22 @@ using System.Text;
 
 public partial class Main : Node
 {
+	// Visuals
 	public static Color[] Colours =
 	{
 		new Color("#000000"),
-		new Color("#55415f"),
-		new Color("#646964"),
-		new Color("#d77355"),
-		new Color("#508cd7"),
-		new Color("#64b964"),
-		new Color("#e6c86e"),
-		new Color("#dcf5ff")
+		new Color("#ff00ff"),
+		new Color("#ff0000"),
+		new Color("#0000ff"),
+		new Color("#00ffff"),
+		new Color("#00ff00"),
+		new Color("#ffff00"),
+		new Color("#ffffff")
 	};
+	private string splatterScene = "Scenes/Splatter.tscn";
+	private float splatterLifespan;
+	private float splatterAppear;
+	private float splatterDisappear;
 
 	// Screens / Scenes
 	private AuthenticationScreen _authenticationScreen;
@@ -74,19 +79,19 @@ public partial class Main : Node
 		_brainCloudWrapper.RunCallbacks();
 	}
 
-    public override void _Notification(int what)
-    {
-        if(what == NotificationWMCloseRequest)
+	public override void _Notification(int what)
+	{
+		if(what == NotificationWMCloseRequest)
 		{
 			_brainCloudWrapper.Logout(false);
 			GetTree().Quit(); // default behaviour
 		}
-    }
+	}
 
-    /// <summary>
-    /// Reset all scenes/screens, initialize brainCloud and display authentication screen.
-    /// </summary>
-    private void StartApp()
+	/// <summary>
+	/// Reset all scenes/screens, initialize brainCloud and display authentication screen.
+	/// </summary>
+	private void StartApp()
 	{
 		// Reset scenes/screens
 		if (_currentScene != null)
@@ -204,16 +209,16 @@ public partial class Main : Node
 		// Transition to lobby scene
 		ChangeScene(_lobbyScreen);
 
-        _lobbyScreen.UpdateLobbyMembers(_lobby);
+		_lobbyScreen.UpdateLobbyMembers(_lobby);
 
-        string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+		string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-        _lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
+		_lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
 
 		_matchMembers.Clear();
 
-        // Connect even listener(s)
-        _lobbyScreen.Connect(LobbyScreen.SignalName.ColourChanged, new Callable(this, MethodName.OnColourChanged));
+		// Connect even listener(s)
+		_lobbyScreen.Connect(LobbyScreen.SignalName.ColourChanged, new Callable(this, MethodName.OnColourChanged));
 		_lobbyScreen.Connect(LobbyScreen.SignalName.LeaveLobbyRequested, new Callable(this, MethodName.OnLeaveLobbyRequested));
 		_lobbyScreen.Connect(LobbyScreen.SignalName.JoinMatchRequested, new Callable(this, MethodName.OnJoinMatchRequested));
 		_lobbyScreen.Connect(LobbyScreen.SignalName.StartMatchRequested, new Callable(this, MethodName.OnStartMatchRequested));
@@ -230,19 +235,19 @@ public partial class Main : Node
 		// Transittion to match scene
 		ChangeScene(_matchScreen);
 
-        _matchScreen.UpdateLobbyMembers(_lobby);
+		_matchScreen.UpdateLobbyMembers(_lobby);
 
 		_cursorParty = GetNode<CursorParty>("ScreenContainer/MatchScreen/MatchContainer/GameSide/GameArea/CursorParty");
-		_cursorParty.SetCustomCursor("Art/Cursors/arrow" + _userColourIndex + ".png");
+		_cursorParty.SetUserColourIndex(_userColourIndex);
 
 		_playing = true;
 
-        string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+		string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-        _matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
+		_matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
 
-        // Connect event listener(s)
-        _matchScreen.Connect(MatchScreen.SignalName.EndMatchRequested, new Callable(this, MethodName.OnEndMatchRequested));
+		// Connect event listener(s)
+		_matchScreen.Connect(MatchScreen.SignalName.EndMatchRequested, new Callable(this, MethodName.OnEndMatchRequested));
 		_matchScreen.Connect(MatchScreen.SignalName.LeaveMatchRequested, new Callable(this, MethodName.OnLeaveMatchRequested));
 
 		_cursorParty.Connect(CursorParty.SignalName.MouseMoved, new Callable(this, MethodName.OnUserMoved));
@@ -367,24 +372,26 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Create a Shockwave instance.
+	/// Create a Splatter instance.
 	/// </summary>
 	/// <param name="pos"></param>
 	/// <param name="colourIndex"></param>
-	private void CreateShockwave(Vector2 pos, int colourIndex)
+	private void CreateSplatter(Vector2 pos, int colourIndex)
 	{
-		// Normalize Shockwave position coordinates for an accurate position across different platforms/resolutions/screens
+		// Normalize Splatter position coordinates for an accurate position across different platforms/resolutions/screens
 		float xCoord = pos.X;
 		float yCoord = pos.Y;
 		xCoord *= 800;
 		yCoord *= 600;
 
-		// Create new Shockwave and add it to the list
-		var shockwave = GD.Load<PackedScene>("res://Scenes/Shockwave.tscn");
-		Shockwave newShockwave = (Shockwave)shockwave.Instantiate();
-		_cursorParty.AddChild(newShockwave); 
-		newShockwave.Position = (new Vector2(xCoord, yCoord));
-		newShockwave.Modulate = Colours[colourIndex];
+		// Create new Splatter and add it to the list
+		var paintSplatter = GD.Load<PackedScene>(splatterScene);
+		Splatter newSplatter = (Splatter)paintSplatter.Instantiate();
+		_cursorParty.GetNode("SplatterMask").AddChild(newSplatter); 
+		newSplatter.Position = new Vector2(xCoord, yCoord);
+		newSplatter.SetColour(Colours[colourIndex]);
+		newSplatter.SetLifespan(splatterLifespan);
+		newSplatter.SetAnimationDurations(splatterAppear, splatterDisappear);
 	}
 
 	/// <summary>
@@ -476,6 +483,9 @@ public partial class Main : Node
 		// TODO:  this will need to be modified if/when other authentication methods are implemented
 		// Update player name with ID used to log in
 		_brainCloudWrapper.PlayerStateService.UpdateName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
+
+		// Read global properties to determine the values that should be used for splatter visuals
+		GetSplatterProperties();
 	}
 
 	/// <summary>
@@ -521,7 +531,7 @@ public partial class Main : Node
 
 		FailureCallback OnLogOutFailed = (status, reasonCode, jsonError, cbObject) =>
 		{
-            GD.Print(string.Format("Log Out Failed:\n{0}  {1}  {2}", status, reasonCode, jsonError));
+			GD.Print(string.Format("Log Out Failed:\n{0}  {1}  {2}", status, reasonCode, jsonError));
 
 			GoToLobbySelectScreen();
 
@@ -533,10 +543,10 @@ public partial class Main : Node
 			{
 				OnError("Unknown LobbySelectScreen Error while trying to log out . . .");
 			}
-        };
+		};
 
 
-        _brainCloudWrapper.Logout(true, OnLogOutSuccess, OnLogOutFailed);
+		_brainCloudWrapper.Logout(true, OnLogOutSuccess, OnLogOutFailed);
 	}
 
 	/// <summary>
@@ -639,25 +649,25 @@ public partial class Main : Node
 		if (data.ContainsKey("lobby"))
 		{
 			_lobby = (Dictionary<string, object>)data["lobby"];
-            _lobbyID = (string)data["lobbyId"];
+			_lobbyID = (string)data["lobbyId"];
 
-            // Update lobby/match members list and host button visibility (only the lobby owner / host can start and end matches)
-            if (_lobbyScreen != null)
+			// Update lobby/match members list and host button visibility (only the lobby owner / host can start and end matches)
+			if (_lobbyScreen != null)
 			{
 				_lobbyScreen.UpdateLobbyMembers(_lobby);
 
-                string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+				string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-                _lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
-            }
+				_lobbyScreen.ToggleStartButtonVisibility(lobbyOwnerCxID == _userCxID);
+			}
 			if(_matchScreen != null)
 			{
 				_matchScreen.UpdateLobbyMembers(_lobby);
 
-                string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
+				string lobbyOwnerCxID = (string)_lobby["ownerCxId"];
 
-                _matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
-            }
+				_matchScreen.ToggleEndMatchButtonVisibility(lobbyOwnerCxID == _userCxID);
+			}
 
 			// There is now enough lobby data to display lobby screen (IF matchmaking was in progress)
 			if (_matchmaking)
@@ -815,7 +825,7 @@ public partial class Main : Node
 			
 			// The user clicked somewhere within the game area
 			case "shockwave":
-				CreateShockwave(new Vector2(xCoord, yCoord), (int)extra["colorIndex"]);
+				CreateSplatter(new Vector2(xCoord, yCoord), (int)extra["colorIndex"]);
 				break;
 			default:
 				break;
@@ -832,8 +842,8 @@ public partial class Main : Node
 		{
 			var json = BrainCloud.JsonFx.Json.JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
 
-            string op = (string)json["op"];
-            string cxID = "";
+			string op = (string)json["op"];
+			string cxID = "";
 			if (json.ContainsKey("cxId"))
 			{
 				cxID = (string)json["cxId"];
@@ -983,13 +993,13 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Triggered when the local user (this user) clicks within he game area. Create a shockwave at this position and send update to ALL other members.
+	/// Triggered when the local user (this user) clicks within he game area. Create a splatter at this position and send update to ALL other members.
 	/// </summary>
 	/// <param name="pos">Vector2 mouse click position.</param>
-	/// <param name="button">MouseButton value indicating which type of shockwave should be created.</param>
+	/// <param name="button">MouseButton value indicating which type of splatter should be created.</param>
 	private void OnUserClicked(Vector2 pos, MouseButton button)
 	{
-		// Create / Send the shockwave to match members
+		// Create / Send the splatter to match members
 		Dictionary<string, object> data = new Dictionary<string, object>()
 		{
 			{ "x", pos.X },
@@ -1002,22 +1012,22 @@ public partial class Main : Node
 			{ "data", data }
 		};
 
-		// TODO:  modify shockwave colour, etc. based on MouseButton when Team Mode is implemented
+		// TODO:  modify splatter colour, etc. based on MouseButton when Team Mode is implemented
 
 		string jsonString = BrainCloud.JsonFx.Json.JsonWriter.Serialize(json);
 
 		byte[] jsonBytes = { 0x0 };
 		jsonBytes = Encoding.ASCII.GetBytes(jsonString);
 
-		// We send the shockewave event as reliable because such action needs to be guaranteed
+		// We send the splatter event as reliable because such action needs to be guaranteed
 		bool reliable = true;
 		bool ordered = false;
 		int channel = BrainCloudRelay.CHANNEL_HIGH_PRIORITY_2;
 
 		_brainCloudWrapper.RelayService.SendToAll(jsonBytes, reliable, ordered, channel);
 
-		// Create the shockwave locally
-		CreateShockwave(pos, _userColourIndex);
+		// Create the splatter locally
+		CreateSplatter(pos, _userColourIndex);
 	}
 
 	/// <summary>
@@ -1037,9 +1047,9 @@ public partial class Main : Node
 		_brainCloudWrapper.RelayService.EndMatch(extraJSON);
 
 		_matchmaking = true;
-        _userIsReady = false;
-        _userWasPresentSinceStart = false;
-    }
+		_userIsReady = false;
+		_userWasPresentSinceStart = false;
+	}
 
 	/// <summary>
 	/// Disconnect from RTT/Relay and return to LobbySelect Screen.
@@ -1047,5 +1057,57 @@ public partial class Main : Node
 	private void OnLeaveMatchRequested()
 	{
 		OnLeaveLobbyRequested();
+	}
+
+	private void GetSplatterProperties()
+	{
+		string[] properties;
+
+		properties = new string[]{"Colours"};
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetColoursCallback, null);
+
+		properties = new string[] { "PaintLifespan" };
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetLifespanCallback, null);
+
+		properties = new string[] { "AppearDuration", "DisappearDuration" };
+		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetAnimDurationsCallback, null);
+	}
+
+	private void OnGetColoursCallback(string jsonResponse, object cbObject)
+	{
+		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+		var data = response["data"] as Dictionary<string, object>;
+		var property = data["Colours"] as Dictionary<string, object>;
+
+		var value = property["value"] as string;
+		//"081175,902a96,cf3222,d67b10,5390ce,49b85d,d1d675,b8ced6"
+		string[] hexValues = value.Split(',');
+		for(int ii = 0; ii < hexValues.Length; ii++)
+		{
+			Colours[ii] = new Color(string.Concat("#", hexValues[ii]));
+		}
+	}
+
+	private void OnGetLifespanCallback(string jsonResponse, object cbObject)
+	{
+		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+		var data = response["data"] as Dictionary<string, object>;
+		var property = data["PaintLifespan"] as Dictionary<string, object>;
+		float value = Convert.ToSingle(property["value"]);
+		splatterLifespan = value;
+	}
+
+	private void OnGetAnimDurationsCallback(string jsonResponse, object cbObject)
+	{
+		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+		var data = response["data"] as Dictionary<string, object>;
+
+		var property = data["AppearDuration"] as Dictionary<string, object>;
+		float value = Convert.ToSingle(property["value"]);
+		splatterAppear = value;
+
+		property = data["DisappearDuration"] as Dictionary<string, object>;
+		value = Convert.ToSingle(property["value"]);
+		splatterDisappear = value;
 	}
 }
