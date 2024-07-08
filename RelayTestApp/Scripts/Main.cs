@@ -21,8 +21,7 @@ public partial class Main : Node
 		new Color("#ffff00"),
 		new Color("#ffffff")
 	};
-	[Export(PropertyHint.File, "*.tscn")]
-	private string splatterScene;
+	private string splatterScene = "Scenes/Splatter.tscn";
 	private float splatterLifespan;
 	private float splatterAppear;
 	private float splatterDisappear;
