@@ -60,10 +60,6 @@ public partial class Main : Node
 	private bool _userWasPresentSinceStart = false;
 
 	// brainCloud data
-	private string _url = "https://api.braincloudservers.com/dispatcherv2";
-	private string _appSecret = "";
-	private string _appID = "";
-	private string _version = "1.0.0";
 	private BrainCloudWrapper _brainCloudWrapper;
 
 	public override void _Ready()
@@ -111,7 +107,7 @@ public partial class Main : Node
 		
 		// Initialize brainCloud
 		_brainCloudWrapper = new BrainCloudWrapper();
-		_brainCloudWrapper.Init(_url, _appSecret, _appID, _version);
+		_brainCloudWrapper.Init(Ids._url, Ids._appSecret, Ids._appID, Ids._version);
 
 		if (!_brainCloudWrapper.Client.Initialized)
 		{
