@@ -50,7 +50,6 @@ public partial class Main : Node
 	private Dictionary<string, object> _server = null;
 	private List<Member> _matchMembers = new List<Member>();
 	
-
 	// User Data
 	private string _userProfileID = null;
 	private string _userCxID = null;
@@ -61,6 +60,9 @@ public partial class Main : Node
 
 	// brainCloud data
 	private BrainCloudWrapper _brainCloudWrapper;
+
+	// Used to determine OnAuthenticateFailed error message
+	private bool _reconnecting;
 
 	public override void _Ready()
 	{
@@ -117,7 +119,17 @@ public partial class Main : Node
 		{
 			_brainCloudWrapper.Client.EnableLogging(true);
 
-			GoToAuthenticationScreen();
+			// Check for saved profile/anonymous IDs - reconnect returning user or prompt new user to login accordingly
+			if (_brainCloudWrapper.CanReconnect())
+			{
+				LoadScene("Reconnecting . . .");
+				_reconnecting = true;
+				_brainCloudWrapper.Reconnect(OnAuthenticationSuccess, OnAuthenticationFailed);
+			}
+			else
+			{
+				GoToAuthenticationScreen();
+			}
 		}
 	}
 
@@ -456,29 +468,71 @@ public partial class Main : Node
 		var data = response["data"] as Dictionary<string, object>;
 		string profileID = data["profileId"] as string;
 
-		// Update player name
-
-		// Callbacks for UpdateName
-		SuccessCallback OnUpdateNameSuccess = (response, cbObject) =>
+		// Update Player State playerName
+		SuccessCallback ReadUserStateSuccess = (response, cbObject) =>
 		{
-			GD.Print(string.Format("Update Name Success:\n{0}", response));
+			if (_brainCloudWrapper.Client.LoggingEnabled)
+			{
+				GD.Print("ReadUserState Success: " + response);
+			}
 
-			_userProfileID = profileID;
+			var readUserStateResponse = BrainCloud.JsonFx.Json.JsonReader.Deserialize<Dictionary<string, object>>(response);
+			var data = readUserStateResponse["data"] as Dictionary<string, object>;
+			string currentPlayerName = data["playerName"] as string;
 
-			// Proceed to pre-lobby / lobby select
-			GoToLobbySelectScreen();
+			// _username will be null during reconnect
+			if (string.IsNullOrEmpty(_username))
+			{
+				_username = currentPlayerName;
+
+				// Proceed to pre-lobby / lobby select
+				GoToLobbySelectScreen();
+			}
+
+			// _username will have a value during normal authentication
+			else
+			{
+				// The playerName property will need to be updated if a returning user logs in with a mismatched Universal ID
+				if (!_username.Equals(currentPlayerName))
+				{
+					// Callbacks for UpdateName
+					SuccessCallback OnUpdateNameSuccess = (response, cbObject) =>
+					{
+						GD.Print(string.Format("Update Name Success:\n{0}", response));
+
+						_userProfileID = profileID;
+
+						// Proceed to pre-lobby / lobby select
+						GoToLobbySelectScreen();
+					};
+
+					FailureCallback OnUpdateNameFailed = (status, code, error, cbObject) =>
+					{
+						GD.Print(string.Format("Update Name Failed:\n{0}  {1}  {2}", status, code, error));
+
+						OnAuthenticationFailed(status, code, error, cbObject);
+					};
+
+					// TODO:  this will need to be modified if/when other authentication methods are implemented
+					// Update player name with ID used to log in
+					_brainCloudWrapper.PlayerStateService.UpdateName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
+				}
+				else {
+
+					// Proceed to pre-lobby / lobby select
+					GoToLobbySelectScreen();
+				}
+			}
 		};
 
-		FailureCallback OnUpdateNameFailed = (status, code, error, cbObject) =>
+		FailureCallback ReadUserStateFailed = (status, code, error, cbObject) =>
 		{
-			GD.Print(string.Format("Update Name Failed:\n{0}  {1}  {2}", status, code, error));
+			GD.Print(string.Format("ReadUserState Failed:\n{0} {1} {2}", status, code, error));
 
 			OnAuthenticationFailed(status, code, error, cbObject);
 		};
 
-		// TODO:  this will need to be modified if/when other authentication methods are implemented
-		// Update player name with ID used to log in
-		_brainCloudWrapper.PlayerStateService.UpdateName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
+		_brainCloudWrapper.PlayerStateService.ReadUserState(ReadUserStateSuccess, ReadUserStateFailed);
 
 		// Read global properties to determine the values that should be used for splatter visuals
 		GetSplatterProperties();
@@ -501,9 +555,17 @@ public partial class Main : Node
 
 		if (_authenticationScreen != null)
 		{
-			_authenticationScreen.SetErrorMessage("Authentication failed.");
+			if (_reconnecting)
+			{
+				GD.Print("Reconnect failed:\nStored profileID: " + _brainCloudWrapper.GetStoredProfileId() + "\nStored anonymousID: " + _brainCloudWrapper.GetStoredAnonymousId());
+				_authenticationScreen.SetErrorMessage("Reconnect failed.");
+			}
+			else
+			{
+				_authenticationScreen.SetErrorMessage("Authentication failed.");
+			}
 		}
-		
+
 		// Something went wrong while attempting to reload the authentication screen. Restart the app.
 		else
 		{
