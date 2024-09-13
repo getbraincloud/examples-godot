@@ -558,7 +558,6 @@ public partial class Main : Node
 			if (_reconnecting)
 			{
 				GD.Print("Reconnect failed:\nStored profileID: " + _brainCloudWrapper.GetStoredProfileId() + "\nStored anonymousID: " + _brainCloudWrapper.GetStoredAnonymousId());
-				_authenticationScreen.SetErrorMessage("Reconnect failed.");
 			}
 			else
 			{
