@@ -84,7 +84,6 @@ public partial class AuthenticationMenu : Control
         string password = _passwordField.Text;
 
         _authenticationMenuMessage.Hide();
-        _authenticateButton.Disabled = true;
 
         switch (authenticationType)
         {
