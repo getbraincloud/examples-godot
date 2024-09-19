@@ -100,7 +100,7 @@ public partial class LobbyScreen : Control
     /// Change the user's colour.
     /// </summary>
     /// <param name="colourButtonIndex">int representing the colour index for GameColours.</param>
-    private void OnColourButtonPressed(int colourButtonIndex)
+    public void OnColourButtonPressed(int colourButtonIndex)
     {
         EmitSignal(SignalName.ColourChanged, colourButtonIndex);
     }
