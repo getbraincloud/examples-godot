@@ -36,6 +36,10 @@ public partial class BCManager : Node
     public delegate void DeleteEntitySuccessEventHandler();
     [Signal]
     public delegate void ReceivedStatisticsEventHandler(Dictionary statistics);
+    [Signal]
+    public delegate void ReconnectSuccessEventHandler();
+    [Signal]
+    public delegate void ReconnectFailEventHandler();
 
     private BrainCloudWrapper _brainCloudWrapper;
 
@@ -119,9 +123,32 @@ public partial class BCManager : Node
         _brainCloudWrapper.AuthenticateEmailPassword(email, password, forceCreate, successCallback, failureCallback);
     }
 
+    public void RequestReconnectAuthentication()
+    {
+        if (_brainCloudWrapper.CanReconnect())
+        {
+            GD.Print("Reconnecting...");
+            SuccessCallback successCallback = (response, cbObject) =>
+        {
+            EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[Reconnect Success]\n{0}", Json.Stringify(response)));
+            EmitSignal(SignalName.ReconnectSuccess);
+        };
+            FailureCallback failureCallback = (status, code, error, cbObject) =>
+            {
+                EmitSignal(SignalName.BrainCloudLogReceived, string.Format("[Reconnect Failed] {0}  {1}  {2}", status, code, error));
+                EmitSignal(SignalName.ReconnectFail);
+            };
+            _brainCloudWrapper.Reconnect(successCallback, failureCallback);
+        }
+
+        else{
+            EmitSignal(SignalName.ReconnectFail);
+        }
+    }
+
     // Player State Service
 
-    public void LogOut()
+    public void LogOut(bool forgetUser)
     {
         SuccessCallback successCallback = (response, cbObject) =>
         {
@@ -134,7 +161,7 @@ public partial class BCManager : Node
             EmitSignal(SignalName.LogOutFailure);
         };
 
-        _brainCloudWrapper.PlayerStateService.Logout(successCallback, failureCallback);
+        _brainCloudWrapper.Logout(forgetUser, successCallback, failureCallback);
     }
 
     // Identity Service

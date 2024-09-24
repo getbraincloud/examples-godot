@@ -34,8 +34,6 @@ public partial class MainMenu : Control
 
         _serviceMenu.Connect(ServiceMenu.SignalName.ServiceButtonPressed, new Callable(this, MethodName.OnServiceButtonPressed));
 
-        _logOutButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLogOutButtonPressed));
-
         _brainCloud.Connect(BCManager.SignalName.LogOutSuccess, new Callable(this, MethodName.OnLogOutSuccess));
         _brainCloud.Connect(BCManager.SignalName.LogOutFailure, new Callable(this, MethodName.OnLogOutFail));
     }
@@ -82,11 +80,6 @@ public partial class MainMenu : Control
                 GD.Print("Invalid service selected . . .");
                 break;
         }
-    }
-
-    private void OnLogOutButtonPressed()
-    {
-        _brainCloud.LogOut();
     }
 
     private void OnLogOutSuccess()
