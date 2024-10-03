@@ -1,5 +1,7 @@
 # Relay Test App
 
+NOTE: This example requires Godot (.NET) version 4.3
+
 This example demonstrates brainCloud's Matchmaking and Relay services.
 
 It is a simple "game" in which players can view each other's mouse movement and clicks via Relay messages.

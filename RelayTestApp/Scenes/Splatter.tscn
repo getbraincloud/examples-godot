@@ -1,10 +1,77 @@
-[gd_scene load_steps=3 format=3 uid="uid://cbwlf2i5bcnf1"]
+[gd_scene load_steps=6 format=3 uid="uid://cbwlf2i5bcnf1"]
 
 [ext_resource type="Texture2D" uid="uid://cuuohc8fvutka" path="res://Art/PaintSplatter1.png" id="1_j7qgs"]
 [ext_resource type="Script" path="res://Scripts/Splatter.cs" id="2_v5w4b"]
+
+[sub_resource type="Animation" id="Animation_5640j"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0.255, 0.255)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_lmije"]
+resource_name = "Splatter"
+length = 10.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(0.255, 0.255), Vector2(0.6, 0.6), Vector2(0.4, 0.4)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:modulate:a")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.0666667, 9.96667),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0.4)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_2mopt"]
+_data = {
+"RESET": SubResource("Animation_5640j"),
+"Splatter": SubResource("Animation_lmije")
+}
 
 [node name="Splatter" type="Sprite2D"]
 scale = Vector2(0.255, 0.255)
 texture = ExtResource("1_j7qgs")
 region_rect = Rect2(-42.5, -42.5, 85, 85)
 script = ExtResource("2_v5w4b")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_2mopt")
+}
+autoplay = "Splatter"
