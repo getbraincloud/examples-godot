@@ -20,7 +20,6 @@ public partial class Splatter : Sprite2D
 		targetScale = Scale.X;
 		random = new Random();
 		Rotate(RandomRange(0, Mathf.Tau));
-		AppearAnimation();
 	}
 
 	public void SetColour(Color newColour)
@@ -29,46 +28,14 @@ public partial class Splatter : Sprite2D
 	}
 
 	public void SetLifespan(float newLifespan)
-    {
-        lifespan = newLifespan;
-    }
-
-    public void SetAnimationDurations(float appearDuration, float disappearDuration)
-    {
-        splatterDuration = appearDuration;
-        fadeDuration = disappearDuration;
-    }
-
-	private async void AppearAnimation()
 	{
-		float age = 0.0f;
-		while(age <= splatterDuration)
-		{
-			age += (float)GetPhysicsProcessDeltaTime();
-			Scale = Vector2.One * SplatSizeOverTime(age, splatterDuration, overSplat) * targetScale;
-			Modulate = SetAlpha(Modulate, Mathf.Max(age / splatterDuration, 0.25f));
-			await Task.Delay(10);
-		}
-		Scale = Vector2.One * targetScale;
-		Modulate = SetAlpha(Modulate, 1);
-
-		if(lifespan >= 0)
-		{
-			await Task.Delay((int)(lifespan * 1000));
-			DisappearAnimation();
-		}
+		lifespan = newLifespan;
 	}
 
-	private async void DisappearAnimation()
+	public void SetAnimationDurations(float appearDuration, float disappearDuration)
 	{
-		float age = 0.0f;
-		while(age <= fadeDuration)
-		{
-			age += (float)GetPhysicsProcessDeltaTime();
-			Modulate = SetAlpha(Modulate, 1.0f - Mathf.Pow(age / fadeDuration, 2));
-			await Task.Delay(10);
-		}
-		CallDeferred(Node.MethodName.QueueFree);
+		splatterDuration = appearDuration;
+		fadeDuration = disappearDuration;
 	}
 
 	private Color SetAlpha(Color oldColor, float newAlpha)

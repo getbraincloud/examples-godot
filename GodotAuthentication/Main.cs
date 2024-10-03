@@ -32,11 +32,25 @@ public partial class Main : Node
         _serviceTitle = GetNode<Label>("MarginContainer/VBoxContainer/Content/VBoxContainer/ServiceTitle");
 
         _brainCloudManager.Connect(BCManager.SignalName.LogOutSuccess, new Callable(this, MethodName.OnLoggedOut));
+        _brainCloudManager.Connect(BCManager.SignalName.ReconnectSuccess, new Callable(this, MethodName.OnAuthenticated));
+        _brainCloudManager.Connect(BCManager.SignalName.ReconnectFail, new Callable(this, MethodName.OnReconnectFail));
 
         _menuButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.LoadServiceMenu));
         _logOutButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLogOutButtonPressed));
 
-        LoadAuthenticationService();
+        _menuButton.Hide();
+        _logOutButton.Hide();
+
+        _brainCloudManager.RequestReconnectAuthentication();
+    }
+
+    public override void _Notification(int what)
+    {
+        if(what == NotificationWMCloseRequest)
+		{
+            _brainCloudManager.LogOut(false);
+			GetTree().Quit(); // default behaviour
+		}
     }
 
     /// <summary>
@@ -228,9 +242,13 @@ public partial class Main : Node
         LoadServiceMenu();
     }
 
+    private void OnReconnectFail(){
+        LoadAuthenticationService();
+    }
+
     private void OnLogOutButtonPressed()
     {
-        _brainCloudManager.LogOut();
+        _brainCloudManager.LogOut(true);
     }
 
     private void OnLoggedOut()
