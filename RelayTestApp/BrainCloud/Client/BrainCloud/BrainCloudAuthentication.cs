@@ -50,7 +50,7 @@ using BrainCloud.JsonFx.Json;
         {
             ProfileId = profileId;
             AnonymousId = anonymousId;
-            CompressResponses = false;
+            CompressResponses = true;
         }
 
         /// <summary>
@@ -60,6 +60,19 @@ using BrainCloud.JsonFx.Json;
         public void ClearSavedProfileID()
         {
             ProfileId = null;
+        }
+
+        /// <summary>
+        /// Gets the brainCloud server version.
+        /// </summary>
+        public void getServerVersion(SuccessCallback success = null, FailureCallback failure = null)
+        {
+            Dictionary<string, object> data = new Dictionary<string, object>();
+            data[OperationParam.AuthenticateServiceAuthenticateGameId.Value] = _client.AppId;
+
+            ServerCallback callback = BrainCloudClient.CreateServerCallback(success, failure);
+            ServerCall sc = new ServerCall(ServiceName.Authenticate, ServiceOperation.GetServerVersion, data, callback);
+            _client.SendRequest(sc);
         }
 
         /// <summary>
