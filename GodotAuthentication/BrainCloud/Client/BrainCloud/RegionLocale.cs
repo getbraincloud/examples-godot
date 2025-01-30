@@ -7,12 +7,15 @@ namespace BrainCloud
 {
     using System.Runtime.InteropServices;
     using System.Globalization;
-#if UNITY_STANDALONE_WIN 
+    using System;
+#if UNITY_STANDALONE_WIN
     using System.Text;
 #endif
 #if (!(DOT_NET || GODOT))
     using UnityEngine;
-
+#endif
+#if ENABLE_WINMD_SUPPORT
+    using Windows.Globalization;
 #endif
 
     public class RegionLocale
@@ -56,9 +59,27 @@ namespace BrainCloud
 
         protected static void GetCountryLocale()
         {
+#if !ENABLE_WINMD_SUPPORT
             //By default get it from region info
             RegionInfo regionInfo = RegionInfo.CurrentRegion;
             m_countryLocale = regionInfo.TwoLetterISORegionName;
+#else
+            try
+            {
+                // Create an instance of the GeographicRegion class from Windows.Globalization
+                GeographicRegion region = new GeographicRegion();
+                string regionCode = region.CodeTwoLetter;
+                string displayName = region.DisplayName;
+                m_countryLocale = regionCode;
+
+                // Output the results to the Unity console
+                Debug.Log($"Region Code: {regionCode}, Display Name: {displayName}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError("Error accessing Windows.Globalization: " + ex.Message);
+            }
+#endif
 
             //For these specific cases, try to get region more accurately rather than from the system language selection
 #if UNITY_IPHONE && !UNITY_EDITOR
@@ -82,11 +103,11 @@ namespace BrainCloud
             m_countryLocale = System.Globalization.RegionInfo.CurrentRegion.ToString();
 #endif
 
-            if(m_countryLocale == "419")
+            if (m_countryLocale == "419")
             {
                 m_countryLocale = "_LA_";
             }
-            if(m_countryLocale == "Hans" || m_countryLocale == "Hant")
+            if (m_countryLocale == "Hans" || m_countryLocale == "Hant")
             {
                 m_countryLocale = "CN";
             }
