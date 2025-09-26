@@ -683,7 +683,7 @@ public partial class Main : Node
 				OnMatchmakingFailed(status, reasonCode, jsonError, cbObject);
 			};
 
-			_brainCloudWrapper.LobbyService.FindOrCreateLobby(lobbyType, rating, maxSteps, algo, filterJSON, timeoutSecs, isReady, extraJSON, teamCode, settings, otherUserCxIDs, OnFindOrCreateLobbySuccess, OnFindOrCreateLobbyFailed);
+			_brainCloudWrapper.LobbyService.FindOrCreateLobby(lobbyType, rating, maxSteps, algo, filterJSON, isReady, extraJSON, teamCode, settings, otherUserCxIDs, OnFindOrCreateLobbySuccess, OnFindOrCreateLobbyFailed);
 		};
 
 		// TODO:  implement different RTTConnectionTypes
