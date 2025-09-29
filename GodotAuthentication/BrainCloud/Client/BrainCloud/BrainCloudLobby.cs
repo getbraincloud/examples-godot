@@ -46,7 +46,7 @@ namespace BrainCloud
         /// 
         [Obsolete("This has been deprecated, new FindLobby function does not require timeoutSecs param")]
         public void FindLobby(string in_roomType, int in_rating, int in_maxSteps,
-            Dictionary<string, object> in_algo, Dictionary<string, object> in_filterJson, int in_timeoutSecs,
+            Dictionary<string, object> in_algo, Dictionary<string, object> in_filterJson,
             bool in_isReady, Dictionary<string, object> in_extraJson, string in_teamCode, string[] in_otherUserCxIds = null,
             SuccessCallback success = null, FailureCallback failure = null, object cbObject = null)
         {
@@ -56,7 +56,6 @@ namespace BrainCloud
             data[OperationParam.LobbyMaxSteps.Value] = in_maxSteps;
             data[OperationParam.LobbyAlgorithm.Value] = in_algo;
             data[OperationParam.LobbyFilterJson.Value] = in_filterJson;
-            data[OperationParam.LobbyTimeoutSeconds.Value] = in_timeoutSecs;
             data[OperationParam.LobbyIsReady.Value] = in_isReady;
             if (in_otherUserCxIds != null)
             {
@@ -105,7 +104,7 @@ namespace BrainCloud
         /// 
         [Obsolete("This has been deprecated, new FindLobbyWithPingData function does not require timeoutSecs param")]
         public void FindLobbyWithPingData(string in_roomType, int in_rating, int in_maxSteps,
-            Dictionary<string, object> in_algo, Dictionary<string, object> in_filterJson, int in_timeoutSecs,
+            Dictionary<string, object> in_algo, Dictionary<string, object> in_filterJson,
             bool in_isReady, Dictionary<string, object> in_extraJson, string in_teamCode, string[] in_otherUserCxIds = null,
             SuccessCallback success = null, FailureCallback failure = null, object cbObject = null)
         {
@@ -115,7 +114,6 @@ namespace BrainCloud
             data[OperationParam.LobbyMaxSteps.Value] = in_maxSteps;
             data[OperationParam.LobbyAlgorithm.Value] = in_algo;
             data[OperationParam.LobbyFilterJson.Value] = in_filterJson;
-            data[OperationParam.LobbyTimeoutSeconds.Value] = in_timeoutSecs;
             data[OperationParam.LobbyIsReady.Value] = in_isReady;
             if (in_otherUserCxIds != null)
             {
@@ -211,7 +209,7 @@ namespace BrainCloud
         [Obsolete("This has been deprecated, new FindOrCreateLobby function does not require timeoutSecs param")]
         public void FindOrCreateLobby(string in_roomType, int in_rating, int in_maxSteps,
             Dictionary<string, object> in_algo,
-            Dictionary<string, object> in_filterJson, int in_timeoutSecs,
+            Dictionary<string, object> in_filterJson,
             bool in_isReady,
             Dictionary<string, object> in_extraJson, string in_teamCode,
             Dictionary<string, object> in_settings, string[] in_otherUserCxIds = null,
@@ -223,7 +221,6 @@ namespace BrainCloud
             data[OperationParam.LobbyMaxSteps.Value] = in_maxSteps;
             data[OperationParam.LobbyAlgorithm.Value] = in_algo;
             data[OperationParam.LobbyFilterJson.Value] = in_filterJson;
-            data[OperationParam.LobbyTimeoutSeconds.Value] = in_timeoutSecs;
             data[OperationParam.LobbySettings.Value] = in_settings;
             data[OperationParam.LobbyIsReady.Value] = in_isReady;
             if (in_otherUserCxIds != null)
@@ -278,7 +275,7 @@ namespace BrainCloud
         [Obsolete("This has been deprecated, new FindOrCreateLobbyWithPingData function does not require timeoutSecs param")]
         public void FindOrCreateLobbyWithPingData(string in_roomType, int in_rating, int in_maxSteps,
             Dictionary<string, object> in_algo,
-            Dictionary<string, object> in_filterJson, int in_timeoutSecs,
+            Dictionary<string, object> in_filterJson,
             bool in_isReady,
             Dictionary<string, object> in_extraJson, string in_teamCode,
             Dictionary<string, object> in_settings, string[] in_otherUserCxIds = null,
@@ -290,7 +287,6 @@ namespace BrainCloud
             data[OperationParam.LobbyMaxSteps.Value] = in_maxSteps;
             data[OperationParam.LobbyAlgorithm.Value] = in_algo;
             data[OperationParam.LobbyFilterJson.Value] = in_filterJson;
-            data[OperationParam.LobbyTimeoutSeconds.Value] = in_timeoutSecs;
             data[OperationParam.LobbySettings.Value] = in_settings;
             data[OperationParam.LobbyIsReady.Value] = in_isReady;
             if (in_otherUserCxIds != null)
