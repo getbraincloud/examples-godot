@@ -1,4 +1,7 @@
-﻿#region License
+#define DOT_NET 
+
+// Copyright 2026 bitHeads, Inc. All Rights Reserved.
+#region License
 /*---------------------------------------------------------------------------------*\
 
     Distributed under the terms of an MIT-style license:
