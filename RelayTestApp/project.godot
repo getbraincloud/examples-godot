@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Cursor Party"
 run/main_scene="res://Scenes/Main.tscn"
-config/features=PackedStringArray("4.1", "C#", "Forward Plus")
+config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 boot_splash/image="res://Art/logobc-app-icon-rounded_crop.png"
 boot_splash/fullsize=false
 config/icon="res://Art/logobc-app-icon-rounded_crop.png"
@@ -26,3 +26,7 @@ window/stretch/mode="viewport"
 [dotnet]
 
 project/assembly_name="RTA"
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true

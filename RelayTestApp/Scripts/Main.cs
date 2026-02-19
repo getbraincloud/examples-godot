@@ -515,7 +515,7 @@ public partial class Main : Node
 
 					// TODO:  this will need to be modified if/when other authentication methods are implemented
 					// Update player name with ID used to log in
-					_brainCloudWrapper.PlayerStateService.UpdateName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
+					_brainCloudWrapper.PlayerStateService.UpdateUserName(_username, OnUpdateNameSuccess, OnUpdateNameFailed);
 				}
 				else {
 

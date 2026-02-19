@@ -69,15 +69,15 @@ layout_mode = 2
 [node name="MenuButton" type="Button" parent="MarginContainer/VBoxContainer/Content/CurrentService/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = ExtResource("3_62clj")
 theme_override_styles/hover = ExtResource("4_0s6ua")
+theme_override_styles/normal = ExtResource("3_62clj")
 text = "< Menu"
 
 [node name="LogOutButton" type="Button" parent="MarginContainer/VBoxContainer/Content/CurrentService/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/normal = ExtResource("3_62clj")
 theme_override_styles/hover = ExtResource("4_0s6ua")
+theme_override_styles/normal = ExtResource("3_62clj")
 text = "Log Out"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/Content"]
