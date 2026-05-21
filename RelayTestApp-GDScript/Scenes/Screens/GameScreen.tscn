@@ -1,0 +1,86 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Screens/GameScreen.gd" id="1_game"]
+
+[node name="GameScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_game")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TimerLabel" type="Label" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -60.0
+offset_right = 60.0
+offset_bottom = 36.0
+grow_horizontal = 2
+text = "01:30"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+unique_name_in_owner = true
+
+[node name="CountdownLabel" type="Label" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 40.0
+offset_right = 80.0
+offset_bottom = 100.0
+grow_horizontal = 2
+text = "10"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 52
+theme_override_colors/font_color = Color(1, 0.4, 0.2, 1)
+unique_name_in_owner = true
+
+[node name="PlayerPanel" type="VBoxContainer" parent="HUD"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_bottom = 300.0
+grow_horizontal = 0
+theme_override_constants/separation = 4
+unique_name_in_owner = true
+
+[node name="PanelTitle" type="Label" parent="HUD/PlayerPanel"]
+text = "Players"
+theme_override_font_sizes/font_size = 14
+
+[node name="MoveTimer" type="Timer" parent="."]
+wait_time = 0.05
+autostart = true
+unique_name_in_owner = true
+
+[node name="GameAreaContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GameArea" type="Control" parent="GameAreaContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(800, 600)
+clip_contents = true
+mouse_filter = 0
+unique_name_in_owner = true
+
+[node name="Background" type="ColorRect" parent="GameAreaContainer/GameArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.09, 0.1, 0.13, 1)

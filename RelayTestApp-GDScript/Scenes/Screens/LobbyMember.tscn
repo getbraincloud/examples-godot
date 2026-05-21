@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Screens/LobbyMember.gd" id="1_lmember"]
+
+[node name="LobbyMember" type="HBoxContainer"]
+script = ExtResource("1_lmember")
+theme_override_constants/separation = 8
+custom_minimum_size = Vector2(0, 28)
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(20, 20)
+size_flags_vertical = 4
+color = Color(1, 1, 1, 1)
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Player"
+theme_override_font_sizes/font_size = 15
+
+[node name="PingLabel" type="Label" parent="."]
+layout_mode = 2
+text = "-- ms"
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)

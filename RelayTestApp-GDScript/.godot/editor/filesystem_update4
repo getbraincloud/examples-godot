@@ -1,0 +1,8 @@
+res://addons/braincloud/internal/BrainCloudRelayComms.gd
+res://Scripts/Ids.gd
+res://addons/braincloud/BrainCloudRelay.gd
+res://Scripts/Main.gd
+res://Scripts/Screens/LoginScreen.gd
+res://Scripts/Components/PlayerCursor.gd
+res://Scripts/Screens/GameScreen.gd
+res://Scripts/Screens/LobbyScreen.gd
