@@ -227,7 +227,7 @@ func _on_rsmg(data: PackedByteArray) -> void:
 	var op: String = msg.get("op", "")
 
 	print("[RelayComms] RSMG op='%s' msg=%s" % [op, str(msg)])
-	if op == "CONNECT":
+	if op == "CONNECT" and _state == _State.HANDSHAKE:
 		_net_id = msg.get("netId", -1)
 		_state = _State.CONNECTED
 		_send_ping()

@@ -289,7 +289,7 @@ func _connect_relay(room_data: Dictionary) -> void:
 
 		# Host records start time and broadcasts game_start to all players so timers sync
 		if AppState.user_cx_id == AppState.lobby_owner_cx_id:
-			AppState.game_start_time_ms = Time.get_ticks_msec()
+			AppState.game_start_time_ms = int(Time.get_unix_time_from_system() * 1000.0)
 			var start_msg := JSON.stringify({
 				"op": "game_start",
 				"data": {"startTime": AppState.game_start_time_ms}
@@ -334,7 +334,6 @@ func _on_match_ended() -> void:
 	AppState.bc.relay_service.deregister_relay_callback()
 	AppState.bc.relay_service.deregister_system_callback()
 	AppState.bc.relay_service.relay_disconnect()
-	AppState.lobby_members.clear()
 	AppState.game_start_time_ms = 0
 	_show_screen(_LOBBY_SCENE)
 

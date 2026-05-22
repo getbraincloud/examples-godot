@@ -24,4 +24,4 @@ var my_net_id: int = -1
 
 var lobby_owner_cx_id: String = ""
 var ping_data: Dictionary = {}       # region → ms, measured before lobby join
-var game_start_time_ms: int = 0      # ticks_msec when match started (set by host, synced to non-hosts)
+var game_start_time_ms: int = 0      # Unix epoch ms when match started (set by host, synced to non-hosts)

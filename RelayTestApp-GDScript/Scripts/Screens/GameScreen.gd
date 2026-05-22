@@ -66,10 +66,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_ping_timer += delta
 
-	if AppState.game_start_time_ms == 0:
+	if AppState.game_start_time_ms <= 0:
 		return
 
-	var elapsed   := float(Time.get_ticks_msec() - AppState.game_start_time_ms) / 1000.0
+	var elapsed   := float(int(Time.get_unix_time_from_system() * 1000.0) - AppState.game_start_time_ms) / 1000.0
 	var remaining := maxf(_MATCH_DURATION - elapsed, 0.0)
 	_timer_label.text = "%02d:%02d" % [int(remaining) / 60, int(remaining) % 60]
 
@@ -114,7 +114,7 @@ func _broadcast_ping() -> void:
 	var ms: int = AppState.bc.relay_service.get_ping()
 	if ms < 0:
 		return
-	_send_relay_all({"op": "relay_ping", "ping": ms},
+	_send_relay_all({"op": "relay_ping", "data": {"ping": ms}},
 					false, false, BrainCloudRelay.CHANNEL_LOW_PRIORITY)
 
 # ── Shockwave + splotch ───────────────────────────────────────────────────────
@@ -176,7 +176,7 @@ func _on_relay_message(net_id: int, raw: PackedByteArray) -> void:
 				AppState.game_start_time_ms = start_time
 		"move":            _on_move(net_id, msg.get("data", {}))
 		"shockwave":       _on_remote_shockwave(net_id, msg.get("data", {}))
-		"relay_ping":      _on_remote_ping(net_id, int(msg.get("ping", -1)))
+		"relay_ping":      _on_remote_ping(net_id, int(msg.get("data", {}).get("ping", msg.get("ping", -1))))
 		"clear_splotches": _clear_all_splotches()
 		"end_match":       end_match.emit()
 
@@ -202,7 +202,10 @@ func _on_move(net_id: int, data: Dictionary) -> void:
 	_get_or_create_cursor(net_id).move_to(float(data.get("x", 0.0)), float(data.get("y", 0.0)))
 
 func _on_remote_shockwave(net_id: int, data: Dictionary) -> void:
-	var color_index: int = int(data.get("colorIndex", 0))
+	# Prefer the member's known colorIndex (matches C++ which omits colorIndex from message)
+	var cx: String = _net_id_to_cx.get(net_id, "")
+	var member: Dictionary = _member_for_cx(cx)
+	var color_index: int = member.get("extra", {}).get("colorIndex", int(data.get("colorIndex", 0)))
 	var pos := Vector2(float(data.get("x", 0.0)) * _GAME_W,
 					   float(data.get("y", 0.0)) * _GAME_H)
 	_do_shockwave(pos, color_index, false)
@@ -307,8 +310,8 @@ func _get_or_create_cursor(net_id: int) -> Node2D:
 	var pname:  String     = member.get("name", "Player %d" % net_id)
 	var extra:  Dictionary = member.get("extra", {})
 	var cidx:   int        = extra.get("colorIndex", net_id % AppState.color_palette.size())
+	_game_area.add_child(cursor)  # must be before setup so @onready vars are valid
 	cursor.setup(net_id, pname, cidx)
-	_game_area.add_child(cursor)
 	_cursors[net_id] = cursor
 	return cursor
 
