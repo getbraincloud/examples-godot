@@ -86,23 +86,29 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 4
 unique_name_in_owner = true
 
+[node name="PingRegionsContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+unique_name_in_owner = true
+
 [node name="Spacer" type="Control" parent="MarginContainer/HBoxContainer/LeftPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="ButtonRow" type="HBoxContainer" parent="MarginContainer/HBoxContainer/LeftPanel"]
 layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="ReadyButton" type="Button" parent="MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Ready"
-unique_name_in_owner = true
+alignment = 1
+theme_override_constants/separation = 16
 
 [node name="LeaveButton" type="Button" parent="MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
 text = "Leave"
+unique_name_in_owner = true
+
+[node name="ReadyButton" type="Button" parent="MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+text = "Ready"
 unique_name_in_owner = true
 
 [node name="RightPanel" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]

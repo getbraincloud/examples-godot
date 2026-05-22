@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Screens/GameScreen.gd" id="1_game"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.07, 0.08, 0.11, 0.97)
 
 [node name="GameScreen" type="Control"]
 layout_mode = 3
@@ -12,56 +15,7 @@ grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("1_game")
 
-[node name="HUD" type="CanvasLayer" parent="."]
-
-[node name="TimerLabel" type="Label" parent="HUD"]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -60.0
-offset_right = 60.0
-offset_bottom = 36.0
-grow_horizontal = 2
-text = "01:30"
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 28
-unique_name_in_owner = true
-
-[node name="CountdownLabel" type="Label" parent="HUD"]
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -80.0
-offset_top = 40.0
-offset_right = 80.0
-offset_bottom = 100.0
-grow_horizontal = 2
-text = "10"
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 52
-theme_override_colors/font_color = Color(1, 0.4, 0.2, 1)
-unique_name_in_owner = true
-
-[node name="PlayerPanel" type="VBoxContainer" parent="HUD"]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -180.0
-offset_bottom = 300.0
-grow_horizontal = 0
-theme_override_constants/separation = 4
-unique_name_in_owner = true
-
-[node name="PanelTitle" type="Label" parent="HUD/PlayerPanel"]
-text = "Players"
-theme_override_font_sizes/font_size = 14
-
-[node name="MoveTimer" type="Timer" parent="."]
-wait_time = 0.05
-autostart = true
-unique_name_in_owner = true
-
-[node name="GameAreaContainer" type="CenterContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -69,18 +23,129 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="GameArea" type="Control" parent="GameAreaContainer"]
+[node name="LeftPanel" type="Panel" parent="HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "CURSOR PARTY"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.78, 0.58, 1.0, 1.0)
+
+[node name="TimerLabel" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "01:30"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 38
+unique_name_in_owner = true
+
+[node name="HSep1" type="HSeparator" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="PlayersHeader" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "PLAYERS  ✓ = receives your shockwave"
+theme_override_font_sizes/font_size = 9
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1.0)
+
+[node name="PlayerPanel" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+unique_name_in_owner = true
+
+[node name="HSep2" type="HSeparator" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HostControls" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+visible = false
+unique_name_in_owner = true
+
+[node name="HostLabel" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/HostControls"]
+layout_mode = 2
+text = "HOST CONTROLS"
+theme_override_font_sizes/font_size = 9
+theme_override_colors/font_color = Color(1.0, 0.8, 0.3, 1.0)
+
+[node name="ClearSplotchesButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/HostControls"]
+layout_mode = 2
+text = "Clear Splotches"
+unique_name_in_owner = true
+
+[node name="EndMatchButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/HostControls"]
+layout_mode = 2
+text = "End Match"
+unique_name_in_owner = true
+
+[node name="Spacer" type="Control" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeaveButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Leave Game"
+unique_name_in_owner = true
+
+[node name="GameAreaContainer" type="CenterContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GameArea" type="Control" parent="HBoxContainer/GameAreaContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(800, 600)
 clip_contents = true
 mouse_filter = 0
 unique_name_in_owner = true
 
-[node name="Background" type="ColorRect" parent="GameAreaContainer/GameArea"]
+[node name="Background" type="ColorRect" parent="HBoxContainer/GameAreaContainer/GameArea"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.09, 0.1, 0.13, 1)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="CountdownLabel" type="Label" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 200.0
+offset_right = 80.0
+offset_bottom = 260.0
+grow_horizontal = 2
+text = "10"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 72
+theme_override_colors/font_color = Color(1, 0.4, 0.2, 1)
+unique_name_in_owner = true
+
+[node name="MoveTimer" type="Timer" parent="."]
+wait_time = 0.05
+autostart = true
+unique_name_in_owner = true

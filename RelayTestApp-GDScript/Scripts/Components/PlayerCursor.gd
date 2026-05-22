@@ -15,7 +15,7 @@ func _ready() -> void:
 func setup(nid: int, pname: String, color_index: int) -> void:
 	net_id      = nid
 	player_name = pname
-	_name_label.text = pname
+	if _name_label: _name_label.text = pname
 	set_color_index(color_index)
 
 func set_color_index(index: int) -> void:

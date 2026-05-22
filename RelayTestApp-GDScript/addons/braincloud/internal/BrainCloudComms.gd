@@ -505,14 +505,7 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 
 	if response_code == 200:
 		_reset_idle_timer()
-		var body_str: String
-		# Detect gzip magic bytes (1F 8B) — server compresses when compressIfLarger threshold is met
-		if body.size() >= 2 and body[0] == 0x1f and body[1] == 0x8b:
-			var decompressed := body.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
-			body_str = decompressed.get_string_from_utf8()
-		else:
-			body_str = body.get_string_from_utf8()
-		handle_response_bundle(body_str)
+		handle_response_bundle(body.get_string_from_utf8())
 	elif response_code in [502, 503, 504]:
 		_client_ref.log("Server busy (%d), retrying..." % response_code)
 		if not _resend_message(request_state):
