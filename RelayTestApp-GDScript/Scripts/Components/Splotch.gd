@@ -4,28 +4,51 @@ extends Node2D
 
 const _SPLAT_ANIM_TIME  := 0.3
 const _BASE_RADIUS      := 16.0
-const _BASE_ALPHA       := 0.55   # matches C++ RelayTestApp
+const _BASE_ALPHA       := 0.55
 const _FADE_SECS        := 3.0
 const _SATELLITE_COUNT  := 5
 
-var _color:      Color         = Color.WHITE
-var _elapsed:    float         = 0.0
-var _duration:   int           = -1
+# LCG constants — must match splotchInit() in globals.h exactly.
+const _LCG_MUL      := 1664525
+const _LCG_INC      := 1013904223
+const _LCG_MASK     := 0xFFFFFFFF    # lower 32 bits
+const _LCG_NORM     := 4294967296.0  # 2^32 — matches 4294967295.0f compiled as float32 in C++
+
+# Splotch visual parameters — must match globals.h.
+const _COLOR_JITTER := 0.07
+const _SAT_DIST_MIN := 14.0
+const _SAT_DIST_MAX := 26.0
+const _SAT_RAD_MIN  := 3.0
+const _SAT_RAD_MAX  := 6.0
+
+var _color:      Color          = Color.WHITE
+var _elapsed:    float          = 0.0
+var _duration:   int            = -1
 var _satellites: Array[Vector2] = []
 var _sat_radii:  Array[float]   = []
 
-func setup(color: Color, duration: int) -> void:
+var _lcg_state: int = 0
+
+func _lcg() -> int:
+	_lcg_state = (_lcg_state * _LCG_MUL + _LCG_INC) & _LCG_MASK
+	return _lcg_state
+
+func _lcg_float(lo: float, hi: float) -> float:
+	return lo + float(_lcg()) / _LCG_NORM * (hi - lo)
+
+func setup(color: Color, duration: int, seed: int = -1) -> void:
+	_lcg_state = seed if seed >= 0 else randi()
 	_color = Color(
-		clampf(color.r + randf_range(-0.07, 0.07), 0.0, 1.0),
-		clampf(color.g + randf_range(-0.07, 0.07), 0.0, 1.0),
-		clampf(color.b + randf_range(-0.07, 0.07), 0.0, 1.0)
+		clampf(color.r + _lcg_float(-_COLOR_JITTER, _COLOR_JITTER), 0.0, 1.0),
+		clampf(color.g + _lcg_float(-_COLOR_JITTER, _COLOR_JITTER), 0.0, 1.0),
+		clampf(color.b + _lcg_float(-_COLOR_JITTER, _COLOR_JITTER), 0.0, 1.0)
 	)
 	_duration = duration
 	for i in range(_SATELLITE_COUNT):
-		var angle := randf() * TAU
-		var dist  := randf_range(14.0, 26.0)
+		var angle := _lcg_float(0.0, TAU)
+		var dist  := _lcg_float(_SAT_DIST_MIN, _SAT_DIST_MAX)
 		_satellites.append(Vector2(cos(angle), sin(angle)) * dist)
-		_sat_radii.append(randf_range(3.0, 6.0))
+		_sat_radii.append(_lcg_float(_SAT_RAD_MIN, _SAT_RAD_MAX))
 
 func _process(delta: float) -> void:
 	_elapsed += delta

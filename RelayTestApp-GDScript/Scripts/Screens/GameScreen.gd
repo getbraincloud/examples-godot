@@ -119,8 +119,12 @@ func _broadcast_ping() -> void:
 
 # ── Shockwave + splotch ───────────────────────────────────────────────────────
 
-func _do_shockwave(pos: Vector2, color_index: int, broadcast: bool) -> void:
+func _do_shockwave(pos: Vector2, color_index: int, broadcast: bool, seed: int = -1) -> void:
 	var col := AppState.color_palette[color_index] if color_index < AppState.color_palette.size() else Color.WHITE
+
+	# Generate seed when originating; remote calls pass the seed from the message.
+	if seed < 0:
+		seed = randi()
 
 	var sw := _SHOCKWAVE_SCENE.instantiate() as Node2D
 	sw.setup(col)
@@ -128,7 +132,7 @@ func _do_shockwave(pos: Vector2, color_index: int, broadcast: bool) -> void:
 	_game_area.add_child(sw)
 
 	var sp := _SPLOTCH_SCENE.instantiate() as Node2D
-	sp.setup(col, AppState.splotch_duration)
+	sp.setup(col, AppState.splotch_duration, seed)
 	sp.position = pos
 	_game_area.add_child(sp)
 	_splotches.append(sp)
@@ -136,7 +140,7 @@ func _do_shockwave(pos: Vector2, color_index: int, broadcast: bool) -> void:
 	if broadcast:
 		var norm_x := pos.x / _GAME_W
 		var norm_y := pos.y / _GAME_H
-		var msg    := JSON.stringify({"op": "shockwave", "data": {"x": norm_x, "y": norm_y, "colorIndex": color_index}}).to_utf8_buffer()
+		var msg    := JSON.stringify({"op": "shockwave", "data": {"x": norm_x, "y": norm_y, "colorIndex": color_index, "seed": seed}}).to_utf8_buffer()
 		_send_to_targets(msg, true, false, BrainCloudRelay.CHANNEL_HIGH_PRIORITY_1)
 
 # ── Relay send helpers ────────────────────────────────────────────────────────
@@ -202,13 +206,15 @@ func _on_move(net_id: int, data: Dictionary) -> void:
 	_get_or_create_cursor(net_id).move_to(float(data.get("x", 0.0)), float(data.get("y", 0.0)))
 
 func _on_remote_shockwave(net_id: int, data: Dictionary) -> void:
-	# Prefer the member's known colorIndex (matches C++ which omits colorIndex from message)
+	if net_id == AppState.my_net_id:
+		return  # relay delivers to all including sender; skip own echo
 	var cx: String = _net_id_to_cx.get(net_id, "")
 	var member: Dictionary = _member_for_cx(cx)
 	var color_index: int = member.get("extra", {}).get("colorIndex", int(data.get("colorIndex", 0)))
+	var seed: int = int(data.get("seed", -1))
 	var pos := Vector2(float(data.get("x", 0.0)) * _GAME_W,
 					   float(data.get("y", 0.0)) * _GAME_H)
-	_do_shockwave(pos, color_index, false)
+	_do_shockwave(pos, color_index, false, seed)
 
 func _on_remote_ping(net_id: int, ms: int) -> void:
 	var cx: String = _net_id_to_cx.get(net_id, "")
