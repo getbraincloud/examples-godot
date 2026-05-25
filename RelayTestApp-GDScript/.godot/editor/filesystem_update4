@@ -16,3 +16,4 @@ res://Scenes/Components/PlayerCursor.tscn
 res://Scenes/Screens/GameScreen.tscn
 res://Scripts/Components/Shockwave.gd
 res://Scripts/Components/Splotch.gd
+res://Scenes/Components/Splotch.tscn
