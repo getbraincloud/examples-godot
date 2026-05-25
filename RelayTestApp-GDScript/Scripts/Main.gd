@@ -323,9 +323,15 @@ func _on_relay_system(msg: Dictionary) -> void:
 				_current_screen.on_relay_system(op, msg)
 
 func _on_host_end_match() -> void:
-	var bytes := JSON.stringify({"op": "end_match"}).to_utf8_buffer()
-	AppState.bc.relay_service.send(bytes, BrainCloudRelay.TO_ALL_PLAYERS, true, true, 0)
-	_on_match_ended()
+	# Only the host sends the SDK endMatch packet (opcode CL2RS_ENDMATCH=6).
+	# The relay server broadcasts END_MATCH as a system message to all players,
+	# which triggers _on_relay_system → _on_match_ended() for everyone including the host.
+	if AppState.user_cx_id == AppState.lobby_owner_cx_id:
+		AppState.bc.relay_service.end_match({
+			"cxId":    AppState.user_cx_id,
+			"lobbyId": AppState.lobby_id,
+			"op":      "END_MATCH"
+		})
 
 func _on_leave_game_requested() -> void:
 	_on_match_ended()
@@ -335,6 +341,12 @@ func _on_match_ended() -> void:
 	AppState.bc.relay_service.deregister_system_callback()
 	AppState.bc.relay_service.relay_disconnect()
 	AppState.game_start_time_ms = 0
+	# Non-host players re-ready for the next round (mirrors C++ updateReady(true))
+	if AppState.user_cx_id != AppState.lobby_owner_cx_id and AppState.lobby_id != "":
+		AppState.bc.lobby_service.update_ready(
+			AppState.lobby_id, true,
+			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
+		)
 	_show_screen(_LOBBY_SCENE)
 
 # ── Leave lobby ───────────────────────────────────────────────────────────────

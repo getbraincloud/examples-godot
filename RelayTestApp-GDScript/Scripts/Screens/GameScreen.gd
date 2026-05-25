@@ -181,6 +181,7 @@ func _on_relay_message(net_id: int, raw: PackedByteArray) -> void:
 		"shockwave":       _on_remote_shockwave(net_id, msg.get("data", {}))
 		"relay_ping":      _on_remote_ping(net_id, int(msg.get("data", {}).get("ping", msg.get("ping", -1))))
 		"clear_splotches": _clear_all_splotches()
+		"splotch_sync":    _on_splotch_sync(msg.get("data", {}))
 		"end_match":       end_match.emit()
 
 # ── Relay system messages (called by Main.gd) ─────────────────────────────────
@@ -227,6 +228,21 @@ func _clear_all_splotches() -> void:
 		if is_instance_valid(sp):
 			sp.queue_free()
 	_splotches.clear()
+
+func _on_splotch_sync(data: Dictionary) -> void:
+	if data.get("first", false):
+		_clear_all_splotches()
+	for entry in data.get("splotches", []):
+		var sx   := float(entry.get("x", 0.0)) * _GAME_W
+		var sy   := float(entry.get("y", 0.0)) * _GAME_H
+		var cidx := int(entry.get("c", 0))
+		var ang  := float(entry.get("a", randf() * TAU))
+		var col  := AppState.color_palette[cidx] if cidx < AppState.color_palette.size() else Color.WHITE
+		var sp   := _SPLOTCH_SCENE.instantiate() as Node2D
+		sp.position = Vector2(sx, sy)
+		_game_area.add_child(sp)
+		sp.setup(col, AppState.splotch_duration, ang)
+		_splotches.append(sp)
 
 func _on_clear_splotches_pressed() -> void:
 	_clear_all_splotches()

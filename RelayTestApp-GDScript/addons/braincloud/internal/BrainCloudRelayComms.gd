@@ -89,6 +89,12 @@ func deregister_system_callback() -> void:
 
 const _MAX_PLAYERS := 40
 
+func end_match(json_payload: Dictionary) -> void:
+	if _state != _State.CONNECTED:
+		return
+	var body := PackedByteArray([CL2RS_ENDMATCH]) + JSON.stringify(json_payload).to_utf8_buffer()
+	_send_with_size_prefix(body)
+
 func send_relay(data: PackedByteArray, to_net_id: int, reliable: bool, ordered: bool, channel: int) -> void:
 	if _state != _State.CONNECTED:
 		return

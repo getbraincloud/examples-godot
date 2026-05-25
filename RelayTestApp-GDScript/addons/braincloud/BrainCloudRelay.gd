@@ -48,6 +48,9 @@ func relay_is_connected() -> bool:
 func send(data: PackedByteArray, to_net_id: int, reliable: bool, ordered: bool, channel: int) -> void:
 	_relay_comms.send_relay(data, to_net_id, reliable, ordered, channel)
 
+func end_match(json_payload: Dictionary) -> void:
+	_relay_comms.end_match(json_payload)
+
 func register_relay_callback(cb: Callable) -> void:
 	_relay_comms.register_relay_callback(cb)
 
