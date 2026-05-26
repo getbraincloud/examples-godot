@@ -21,13 +21,21 @@ config/icon="res://icon.svg"
 BCLoader="*res://Scripts/BrainCloudBootstrap.gd"
 Ids="*res://Scripts/Ids.gd"
 AppState="*res://Scripts/AppState.gd"
-BrainCloud="*res://addons/braincloud/BrainCloudWrapper.gd"
+brainCloud="*res://addons/braincloud/BrainCloudWrapper.gd"
+
+[braincloud]
+
+debug/enable_logging=true
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[dotnet]
+
+project/assembly_name="RelayTestApp-GDScript"
 
 [editor_plugins]
 

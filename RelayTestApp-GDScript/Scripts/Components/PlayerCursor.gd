@@ -19,7 +19,7 @@ func setup(nid: int, pname: String, color_index: int) -> void:
 	set_color_index(color_index)
 
 func set_color_index(index: int) -> void:
-	if index < AppState.color_palette.size():
+	if index < AppState.color_palette.size(): 
 		_polygon.color = AppState.color_palette[index]
 	else:
 		_polygon.color = Color.WHITE

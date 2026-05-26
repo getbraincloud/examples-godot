@@ -3,16 +3,9 @@ class_name BrainCloudLobby
 extends RefCounted
 
 var _client_ref: BrainCloudClient
-var _ping_data: Dictionary = {}
 
 func _init(client_ref: BrainCloudClient) -> void:
 	_client_ref = client_ref
-
-func set_ping_data(data: Dictionary) -> void:
-	_ping_data = data
-
-func get_ping_data() -> Dictionary:
-	return _ping_data
 
 func find_lobby(lobby_type: String, rating: int, max_steps: int, algo: Dictionary, filter_json: Dictionary, is_ready: bool, extra_json: Dictionary, team_code: String, other_user_cx_ids: Array) -> Dictionary:
 	var data := {
@@ -55,7 +48,7 @@ func find_or_create_lobby_with_ping_data(lobby_type: String, rating: int, max_st
 		OperationParam.LOBBY_EXTRA_JSON: extra_json,
 		OperationParam.LOBBY_TEAM: team_code,
 		OperationParam.LOBBY_OTHER_USER_CX_IDS: other_user_cx_ids,
-		OperationParam.LOBBY_PING_DATA: _ping_data
+		OperationParam.LOBBY_PING_DATA: {}
 	}
 	return await _send(ServiceOperation.LOBBY_FIND_OR_CREATE, data)
 

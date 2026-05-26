@@ -8,6 +8,7 @@ const PREFS_AUTHENTICATION_TYPE := "brainCloud.authenticationType"
 const PREFS_EXTERNAL_ID := "brainCloud.externalId"
 const PREFS_AUTH_TOKEN := "brainCloud.authToken"
 const PREFS_LAST_PACKET_ID := "brainCloud.lastPacketId"
+const _CREDS_PATH := "res://addons/braincloud/braincloud.cfg"
 
 var _client: BrainCloudClient = null
 var braincloud_client: BrainCloudClient:
@@ -49,6 +50,8 @@ var user_items_service: BrainCloudUserItems:
 	get: return _client.user_items_service
 var script_service: BrainCloudScript:
 	get: return _client.script_service
+var campaign_service: BrainCloudCampaign:
+	get: return _client.campaign_service
 var match_making_service: BrainCloudMatchMaking:
 	get: return _client.match_making_service
 var one_way_match_service: BrainCloudOneWayMatch:
@@ -115,13 +118,24 @@ func _ready() -> void:
 	add_child(_client)
 	_auto_init_from_project_settings()
 
+
 func _auto_init_from_project_settings() -> void:
-	var app_id: String = ProjectSettings.get_setting("braincloud/config/app_id", "")
-	var app_secret: String = ProjectSettings.get_setting("braincloud/config/app_secret", "")
+	# Credentials come from the gitignored braincloud.cfg, with a fallback to
+	# project.godot for projects that haven't migrated yet.
+	var app_id     := ""
+	var app_secret := ""
+	var creds := ConfigFile.new()
+	if creds.load(_CREDS_PATH) == OK:
+		app_id     = str(creds.get_value("credentials", "app_id",     ""))
+		app_secret = str(creds.get_value("credentials", "app_secret", ""))
+	if app_id.is_empty():
+		app_id = ProjectSettings.get_setting("braincloud/config/app_id", "")
+	if app_secret.is_empty():
+		app_secret = ProjectSettings.get_setting("braincloud/config/app_secret", "")
 	if app_id.is_empty() or app_secret.is_empty():
 		return
 	var app_version: String = ProjectSettings.get_setting("braincloud/config/app_version", "1.0.0")
-	var server_url: String = ProjectSettings.get_setting("braincloud/config/server_url", BrainCloudClient.DEFAULT_SERVER_URL)
+	var server_url: String  = ProjectSettings.get_setting("braincloud/config/server_url", BrainCloudClient.DEFAULT_SERVER_URL)
 	var enable_logging: bool = ProjectSettings.get_setting("braincloud/debug/enable_logging", false)
 	_client.enable_logging(enable_logging)
 	init(app_secret, app_id, app_version, server_url)
@@ -167,13 +181,13 @@ func reset_stored_anonymous_id() -> void:
 	_save_pref(PREFS_ANONYMOUS_ID, "")
 
 func _load_pref(key: String) -> String:
-	var section := "BrainCloud" + wrapper_name
+	var section := "brainCloud" + wrapper_name
 	if not ProjectSettings.has_setting(section + "/" + key):
 		return ""
 	return str(ProjectSettings.get_setting(section + "/" + key, ""))
 
 func _save_pref(key: String, value: String) -> void:
-	var section := "BrainCloud" + wrapper_name
+	var section := "brainCloud" + wrapper_name
 	ProjectSettings.set_setting(section + "/" + key, value)
 
 func authenticate_anonymous(force_create: bool = true) -> Dictionary:
@@ -279,6 +293,9 @@ func _on_authenticated(response: Dictionary) -> void:
 	var profile_id: String = data.get("profileId", "")
 	if profile_id.length() > 0:
 		set_stored_profile_id(profile_id)
+
+func getCampaignService() -> BrainCloudCampaign:
+	return campaign_service
 
 func _init_profile_for_authenticate() -> void:
 	if _always_allow_profile_switch:

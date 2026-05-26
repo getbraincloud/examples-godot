@@ -38,6 +38,7 @@ const _AppStore               := preload("res://addons/braincloud/BrainCloudAppS
 const _AsyncMatch             := preload("res://addons/braincloud/BrainCloudAsyncMatch.gd")
 const _Authentication         := preload("res://addons/braincloud/BrainCloudAuthentication.gd")
 const _Blockchain             := preload("res://addons/braincloud/BrainCloudBlockchain.gd")
+const _Campaign               := preload("res://addons/braincloud/BrainCloudCampaign.gd")
 const _Chat                   := preload("res://addons/braincloud/BrainCloudChat.gd")
 const _CustomEntity           := preload("res://addons/braincloud/BrainCloudCustomEntity.gd")
 const _DataStream             := preload("res://addons/braincloud/BrainCloudDataStream.gd")

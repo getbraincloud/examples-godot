@@ -18,16 +18,15 @@ This project is the GDScript equivalent of the [C# Relay Test App](../RelayTestA
 
 ### 1. Enter your App credentials
 
-Open `Scripts/Ids.gd` and replace the placeholder values with your own app's credentials from the [brainCloud Portal](https://portal.braincloudservers.com/):
+The brainCloud plugin includes an editor configuration window. With the project open in Godot, go to:
 
-```gdscript
-const SERVER_URL  := "https://api.braincloudservers.com/dispatcherv2"
-const APP_SECRET  := "your-app-secret-here"
-const APP_ID      := "your-app-id-here"
-const APP_VERSION := "1.0"
-```
+**Project → Tools → brainCloud Config...**
 
-> **Note:** `Ids.gd` is an autoload singleton. Do not commit real credentials to public repositories.
+Fill in your **App ID**, **App Secret**, and **Server URL** from the [brainCloud Portal](https://portal.braincloudservers.com/), then click **Save**. Credentials are stored in `project.godot` under `braincloud/config/*` and can also be edited directly via **Project → Project Settings → braincloud**.
+
+> **Security note:** `project.godot` is committed to version control by default. Add it to `.gitignore`, or use `Scripts/Ids.gd` as a git-ignored override file — the app reads project settings first and falls back to `Ids.gd` if a setting is empty.
+
+The plugin window also includes quick links to the Portal, API Reference, documentation, and the GDScript SDK on GitHub.
 
 ### 2. Configure your brainCloud app
 
