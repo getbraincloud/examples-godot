@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d0ospp5horqtv"
-path="res://.godot/imported/braincloud_logo.png-b70acbff84013d8811d3d68501f95b75.ctex"
+uid="uid://5uk5silalu0a"
+path="res://.godot/imported/braincloud_logo_light.png-356f96e7c4383dd770c01ab3f1770a95.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/braincloud/braincloud_logo.png"
-dest_files=["res://.godot/imported/braincloud_logo.png-b70acbff84013d8811d3d68501f95b75.ctex"]
+source_file="res://addons/braincloud/braincloud_logo_light.png"
+dest_files=["res://.godot/imported/braincloud_logo_light.png-356f96e7c4383dd770c01ab3f1770a95.ctex"]
 
 [params]
 
