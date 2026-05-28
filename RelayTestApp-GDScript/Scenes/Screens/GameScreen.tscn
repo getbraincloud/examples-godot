@@ -75,6 +75,10 @@ theme_override_constants/separation = 4
 [node name="HSep2" type="HSeparator" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
+[node name="Spacer" type="Control" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
 [node name="HostControls" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 visible = false
@@ -96,10 +100,6 @@ text = "Clear Splotches"
 unique_name_in_owner = true
 layout_mode = 2
 text = "End Match"
-
-[node name="Spacer" type="Control" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
 
 [node name="LeaveButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
