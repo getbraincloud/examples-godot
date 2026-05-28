@@ -1,4 +1,4 @@
-# brainCloud Relay Test App — GDScript
+# Cursor Party — GDScript
 
 A multiplayer demo built with **Godot 4.5 (GDScript)** that demonstrates brainCloud's Matchmaking and Relay services. Players can see each other's mouse cursors move in real time, click to fire shockwaves that leave persistent paint splotches on a shared canvas, and play in timed 90-second rounds.
 

@@ -10,11 +10,11 @@ config_version=5
 
 [application]
 
-config/name="RelayTestApp-GDScript"
-config/description="brainCloud Relay Test App — GDScript"
+config/name="Cursor Party - GDScript"
+config/description="Cursor Party — brainCloud Relay multiplayer demo (GDScript)"
 run/main_scene="res://Scenes/Main.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
 
 [autoload]
 
@@ -40,3 +40,7 @@ project/assembly_name="RelayTestApp-GDScript"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/braincloud/plugin.cfg")
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
