@@ -16,7 +16,23 @@ This project is the GDScript equivalent of the [C# Relay Test App](../RelayTestA
 
 ## Setup
 
-### 1. Enter your App credentials
+### 1. Install the brainCloud GDScript SDK
+
+Download the **brainCloud GDScript SDK** from the [Godot Asset Library](https://godotengine.org/asset-library/asset/5196).
+
+To install it into this project:
+
+1. Open **AssetLib** inside the Godot editor (top-centre tab).
+2. Search for **brainCloud** and click **Download** on the result.
+3. When the import dialog appears, make sure the destination is `addons/braincloud/`, then click **Install**.
+
+Alternatively, download the zip from the asset library page, extract it, and copy the `addons/braincloud/` folder directly into `RelayTestApp-GDScript/`.
+
+> **Note:** The addon must be a real copy inside the project folder — Godot's class name scanner does not follow symlinks outside the project root.
+
+After installing, enable the plugin: **Project → Project Settings → Plugins → brainCloud → Enable**.
+
+### 2. Enter your app credentials
 
 The brainCloud plugin includes an editor configuration window. With the project open in Godot, go to:
 
@@ -28,7 +44,7 @@ Fill in your **App ID**, **App Secret**, and **Server URL** from the [brainCloud
 
 The plugin window also includes quick links to the Portal, API Reference, documentation, and the GDScript SDK on GitHub.
 
-### 2. Configure your brainCloud app
+### 3. Configure your brainCloud app
 
 In the brainCloud Portal, ensure your app has:
 
@@ -39,9 +55,9 @@ In the brainCloud Portal, ensure your app has:
   - `AllLobbyTypes` — JSON object mapping lobby type keys to `{"lobby": "TypeName"}` entries
   - `SplotchDuration` — integer seconds a paint splotch persists (`-1` for forever)
 
-### 3. Open in Godot
+### 4. Open in Godot
 
-Open the project folder (`RelayTestApp-GDScript/`) in Godot 4.5. The brainCloud addon is included under `addons/braincloud/` — no additional installation is required.
+Open the project folder (`RelayTestApp-GDScript/`) in Godot 4.5.
 
 ---
 
@@ -84,7 +100,7 @@ RelayTestApp-GDScript/
 ├── Assets/
 │   └── PaintSplatter1.png        ← Splotch texture (white-on-transparent)
 └── addons/
-    └── braincloud/               ← brainCloud GDScript SDK (copied, not symlinked)
+    └── braincloud/               ← brainCloud GDScript SDK (install from Asset Library)
 ```
 
 ---
@@ -123,9 +139,9 @@ When a player joins a game already in progress, the host sends existing splotche
 
 When instantiating component scenes (`Shockwave`, `Splotch`, `PlayerCursor`), always call `add_child()` **before** `setup()`. The `@onready` variable bindings are resolved when the node enters the scene tree, so calling `setup()` first results in nil dereferences.
 
-### The addon must be a real copy
+### The addon must be inside the project
 
-The brainCloud GDScript addon lives at `addons/braincloud/` inside the project. Godot's class name scanner does not follow symlinks outside the project root, so a symlink to a shared location will break class resolution. Keep it as a hard copy.
+The brainCloud GDScript addon lives at `addons/braincloud/` inside the project. Godot's class name scanner does not follow symlinks outside the project root, so a symlink to a shared location will break class resolution. Always install it as a real copy (via the Asset Library or by copying the folder manually).
 
 ---
 
