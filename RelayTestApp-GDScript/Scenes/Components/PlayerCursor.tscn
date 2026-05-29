@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Components/PlayerCursor.gd" id="1_cursor"]
+
+[node name="PlayerCursor" type="Node2D"]
+script = ExtResource("1_cursor")
+
+[node name="Polygon2D" type="Polygon2D" parent="."]
+color = Color(1, 1, 1, 1)
+polygon = PackedVector2Array(0, 0, 0, 18, 5, 13, 10, 20, 12, 18, 7, 10)
+
+[node name="Shadow" type="Polygon2D" parent="."]
+position = Vector2(1.5, 1.5)
+color = Color(0, 0, 0, 0.63)
+polygon = PackedVector2Array(0, 0, 0, 18, 5, 13, 10, 20, 12, 18, 7, 10)
+z_index = -1
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = 14.0
+offset_top = -8.0
+offset_right = 120.0
+offset_bottom = 10.0
+theme_override_font_sizes/font_size = 12

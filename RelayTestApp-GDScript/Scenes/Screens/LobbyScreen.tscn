@@ -1,0 +1,131 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Screens/LobbyScreen.gd" id="1_lobby"]
+
+[node name="LobbyScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lobby")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(860, 0)
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Lobby"
+theme_override_font_sizes/font_size = 22
+
+[node name="LobbyIdLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Lobby: —"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="RegionLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Region: —"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="PlayerCountLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Players: 0"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="TimerLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "00:00"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Waiting..."
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 1)
+unique_name_in_owner = true
+
+[node name="Sep" type="HSeparator" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+
+[node name="MembersTitle" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Members"
+theme_override_font_sizes/font_size = 15
+
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MemberList" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+unique_name_in_owner = true
+
+[node name="PingRegionsContainer" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+unique_name_in_owner = true
+
+[node name="Spacer" type="Control" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+alignment = 1
+theme_override_constants/separation = 16
+
+[node name="LeaveButton" type="Button" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(100, 0)
+text = "Leave"
+unique_name_in_owner = true
+
+[node name="ReadyButton" type="Button" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+text = "Ready"
+unique_name_in_owner = true
+
+[node name="RightPanel" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(320, 0)
+theme_override_constants/separation = 8
+
+[node name="ColorTitle" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+text = "Choose Colour"
+theme_override_font_sizes/font_size = 15
+
+[node name="ColorGrid" type="GridContainer" parent="CenterContainer/MarginContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+columns = 10
+unique_name_in_owner = true

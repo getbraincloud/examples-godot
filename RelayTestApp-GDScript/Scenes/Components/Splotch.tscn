@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Components/Splotch.gd" id="1_splotch"]
+[ext_resource type="Texture2D" path="res://Assets/PaintSplatter1.png" id="2_tex"]
+
+[node name="Splotch" type="Node2D"]
+script = ExtResource("1_splotch")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_tex")

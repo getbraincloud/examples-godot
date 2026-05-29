@@ -1,0 +1,150 @@
+[gd_scene load_steps=3 format=3 uid="uid://ciynsdhg4eu0s"]
+
+[ext_resource type="Script" uid="uid://bvpcabmwxjpxk" path="res://Scripts/Screens/GameScreen.gd" id="1_game"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.07, 0.08, 0.11, 0.97)
+
+[node name="GameScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_game")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LeftPanel" type="Panel" parent="HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/LeftPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 60
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.58, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "CURSOR PARTY"
+horizontal_alignment = 1
+
+[node name="TimerLabel" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "01:30"
+horizontal_alignment = 1
+
+[node name="HSep1" type="HSeparator" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="PlayersHeader" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 9
+text = "PLAYERS  ✓ = receives your shockwave"
+
+[node name="PlayerPanel" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HSep2" type="HSeparator" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HostControls" type="VBoxContainer" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HostLabel" type="Label" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/HostControls"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 9
+text = "HOST CONTROLS"
+
+[node name="ClearSplotchesButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/HostControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clear Splotches"
+
+[node name="EndMatchButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer/HostControls"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "End Match"
+
+[node name="LeaveButton" type="Button" parent="HBoxContainer/LeftPanel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Leave Game"
+
+[node name="GameAreaContainer" type="CenterContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="GameArea" type="Control" parent="HBoxContainer/GameAreaContainer"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 2
+
+[node name="Background" type="ColorRect" parent="HBoxContainer/GameAreaContainer/GameArea"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.09, 0.1, 0.13, 1)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="CountdownLabel" type="Label" parent="HUD"]
+unique_name_in_owner = true
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 33.0
+offset_top = 47.0
+offset_right = 193.0
+offset_bottom = 146.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.2, 1)
+theme_override_font_sizes/font_size = 72
+text = "10"
+horizontal_alignment = 1
+
+[node name="MoveTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 0.05
+autostart = true

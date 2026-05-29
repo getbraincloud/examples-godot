@@ -1,0 +1,46 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Cursor Party - GDScript"
+config/description="Cursor Party — brainCloud Relay multiplayer demo (GDScript)"
+run/main_scene="res://Scenes/Main.tscn"
+config/features=PackedStringArray("4.5", "Forward Plus")
+config/icon="res://icon.png"
+
+[autoload]
+
+BCLoader="*res://Scripts/BrainCloudBootstrap.gd"
+Ids="*res://Scripts/Ids.gd"
+AppState="*res://Scripts/AppState.gd"
+brainCloud="*res://addons/braincloud/BrainCloudWrapper.gd"
+
+[braincloud]
+
+debug/enable_logging=true
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[dotnet]
+
+project/assembly_name="RelayTestApp-GDScript"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/braincloud/plugin.cfg")
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true

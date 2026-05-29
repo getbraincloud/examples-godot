@@ -1,0 +1,106 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Main.gd" id="1_main"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.13, 0.14, 0.18, 1)
+
+[node name="ScreenContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+unique_name_in_owner = true
+
+[node name="LoadingOverlay" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+unique_name_in_owner = true
+
+[node name="Dim" type="ColorRect" parent="LoadingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="CenterContainer" type="CenterContainer" parent="LoadingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LoadingOverlay/CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="LoadingLabel" type="Label" parent="LoadingOverlay/CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Loading..."
+horizontal_alignment = 1
+unique_name_in_owner = true
+
+[node name="CancelButton" type="Button" parent="LoadingOverlay/CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 0)
+text = "Cancel"
+visible = false
+unique_name_in_owner = true
+
+[node name="VersionLayer" type="CanvasLayer" parent="."]
+
+[node name="VersionBG" type="ColorRect" parent="VersionLayer"]
+layout_mode = 1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -50.0
+offset_right = 165.0
+offset_bottom = -4.0
+grow_vertical = 0
+color = Color(0.08, 0.09, 0.12, 0.87)
+
+[node name="VersionMargin" type="MarginContainer" parent="VersionLayer/VersionBG"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="VersionLabel" type="Label" parent="VersionLayer/VersionBG/VersionMargin"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "v0.0.0\nBC 0.0.0"
+unique_name_in_owner = true
