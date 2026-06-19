@@ -1,9 +1,6 @@
-#define DOT_NET 
-
 // Copyright 2026 bitHeads, Inc. All Rights Reserved.
 //----------------------------------------------------
 // brainCloud client source code
-
 //----------------------------------------------------
 
 #if !XAMARIN

@@ -1,11 +1,8 @@
-#define DOT_NET 
-
-// Copyright 2026 bitHeads, Inc. All Rights Reserved.
-using System;
-using System.Net;
-
 namespace BrainCloud
 {
+    using System;
+    using System.Net;
+
     namespace ModernHttpClient
     {
         /// <summary>

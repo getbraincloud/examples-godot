@@ -1,2 +1,8 @@
 # Normalize EOL for all files that Git considers text files.
 * text=auto eol=lf
+
+# The brainCloud C# SDK under BrainCloud/ is mirrored verbatim from repositories/csharp
+# by `node bccm syncsdk` (mostly CRLF, a few generated files LF). Don't normalize its EOL
+# — preserve the source bytes exactly so the sync round-trips cleanly instead of churning
+# the whole tree on every run.
+BrainCloud/** -text

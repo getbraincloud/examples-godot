@@ -1,9 +1,6 @@
-#define DOT_NET 
-
 // Copyright 2026 bitHeads, Inc. All Rights Reserved.
 //----------------------------------------------------
 // brainCloud client source code
-
 //----------------------------------------------------
 
 namespace BrainCloud
@@ -14,11 +11,11 @@ namespace BrainCloud
     using System.Collections;
     using System.Collections.Generic;
     using System;
-    
+
     public class BrainCloudGroupFile
     {
         private BrainCloudClient _bcClient;
-        
+
         public BrainCloudGroupFile(BrainCloudClient client)
         {
             _bcClient = client;

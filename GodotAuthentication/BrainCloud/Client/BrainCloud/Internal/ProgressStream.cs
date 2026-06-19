@@ -1,9 +1,6 @@
-#define DOT_NET 
-
 // Copyright 2026 bitHeads, Inc. All Rights Reserved.
 //----------------------------------------------------
 // brainCloud client source code
-
 //----------------------------------------------------
 
 namespace BrainCloud.Internal
@@ -11,7 +8,6 @@ namespace BrainCloud.Internal
     using System;
     using System.IO;
 
-    
     /// <summary>
     /// Wraps another stream and provides reporting for when bytes are read or written to the stream.
     /// </summary>

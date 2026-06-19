@@ -50,6 +50,22 @@ popup/item_0/text = "CursorPartyV2"
 popup/item_1/text = "CursorPartyV2Backfill"
 popup/item_1/id = 1
 
+[node name="ProtocolOptions" type="OptionButton" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+selected = 0
+item_count = 3
+popup/item_0/text = "WEBSOCKET"
+popup/item_1/text = "TCP"
+popup/item_1/id = 1
+popup/item_2/text = "UDP"
+popup/item_2/id = 2
+
+[node name="PingDataCheck" type="CheckBox" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Use region ping data"
+
 [node name="ErrorMessage" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.827451, 0, 0, 1)

@@ -31,6 +31,7 @@ func _ready() -> void:
 	var app_ver    := _bc_setting("app_version", Ids.APP_VERSION)
 	var server_url := _bc_setting("server_url", Ids.SERVER_URL)
 	AppState.bc.init(app_secret, app_id, app_ver, server_url)
+	AppState.bc.braincloud_client.enable_compression(true)
 	var enable_log := bool(ProjectSettings.get_setting("braincloud/debug/enable_logging", false))
 	AppState.bc.braincloud_client.enable_logging(enable_log)
 	var bc_ver: String = AppState.bc.braincloud_client.get_braincloud_version()
