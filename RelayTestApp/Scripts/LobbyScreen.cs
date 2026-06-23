@@ -13,8 +13,19 @@ public partial class LobbyScreen : Control
     [Signal]
     public delegate void StartMatchRequestedEventHandler();
 
+    // Holds the dynamically built colour-swatch buttons (one per palette entry).
+    private GridContainer _colourButtons;
+
     // Holds/Displays members in lobby
     private VBoxContainer _lobbyMembersContainer;
+
+    // Holds one row per member showing their region ping data (when ping data was gathered).
+    private VBoxContainer _pingDataContainer;
+
+    // This client's own region pings + cxId, so our row renders before the lobby echoes
+    // our extra["pings"] back to us.
+    private Dictionary<string, int> _localPings;
+    private string _localCxId;
 
     // Leave lobby (return to LobbySelect Screen)
     private Button _leaveButton;
@@ -27,7 +38,9 @@ public partial class LobbyScreen : Control
 
     public override void _Ready()
     {
+        _colourButtons = GetNode<GridContainer>("VBoxContainer/ColourButtons");
         _lobbyMembersContainer = GetNode<VBoxContainer>("VBoxContainer/LobbyMembersContainer");
+        _pingDataContainer = GetNode<VBoxContainer>("VBoxContainer/PingDataContainer");
         _leaveButton = GetNode<Button>("VBoxContainer/LobbyButtons/LeaveButton");
         _joinButton = GetNode<Button>("VBoxContainer/LobbyButtons/JoinButton");
         _startButton = GetNode<Button>("VBoxContainer/LobbyButtons/StartButton");
@@ -37,9 +50,54 @@ public partial class LobbyScreen : Control
         _joinButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnJoinButtonPressed));
         _startButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnStartButtonPressed));
 
+        // Build one swatch per palette colour (matches the dotnet/java/react 4×10 grid).
+        BuildColourButtons();
+
         // Hide buttons when not necessary
         _joinButton.Hide();
         _startButton.Hide();
+    }
+
+    /// <summary>
+    /// Create a colour-swatch button for every entry in the (server- or default-) palette,
+    /// sized to Main.Colours so all 40 (or however many) colours are selectable — never a
+    /// hardcoded subset. Mirrors the other CursorParty clients so colour indices line up.
+    /// </summary>
+    private void BuildColourButtons()
+    {
+        foreach (Node child in _colourButtons.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        for (int i = 0; i < Main.Colours.Length; i++)
+        {
+            int colourIndex = i;
+            Color colour = Main.Colours[i];
+
+            var swatch = new Button
+            {
+                CustomMinimumSize = new Vector2(44, 44),
+            };
+
+            var normalStyleBox = new StyleBoxFlat
+            {
+                BgColor = colour,
+                BorderColor = colour,
+                BorderWidthBottom = 3,
+                BorderWidthLeft = 3,
+                BorderWidthRight = 3,
+                BorderWidthTop = 3,
+            };
+            var hoverStyleBox = (StyleBoxFlat)normalStyleBox.Duplicate();
+            hoverStyleBox.BgColor = new Color("#1F2124");
+
+            swatch.AddThemeStyleboxOverride("normal", normalStyleBox);
+            swatch.AddThemeStyleboxOverride("hover", hoverStyleBox);
+            swatch.Pressed += () => OnColourButtonPressed(colourIndex);
+
+            _colourButtons.AddChild(swatch);
+        }
     }
 
     /// <summary>
@@ -93,6 +151,65 @@ public partial class LobbyScreen : Control
             newLobbyMember.SetName(name);
             newLobbyMember.SetColour(Main.Colours[colourIndex]);
             newLobbyMember.SetHostIcon(userIsHost);
+        }
+
+        UpdatePingData(lobbyOwnerCxId, lobbyMembers);
+    }
+
+    /// <summary>
+    /// Provide this client's own region ping data + cxId so our ping row can render before the
+    /// lobby echoes our shared extra["pings"] back to us. Call before UpdateLobbyMembers.
+    /// </summary>
+    public void SetLocalPingData(Dictionary<string, int> pings, string cxId)
+    {
+        _localPings = pings;
+        _localCxId = cxId;
+    }
+
+    /// <summary>
+    /// Render one row per lobby member showing the region ping times they shared via lobby
+    /// extra["pings"] (gathered from PingRegions before matchmaking). Mirrors the dotnet/java/
+    /// react CursorParty clients so every member sees everyone's ping data. Members that shared
+    /// no ping data (ping data disabled) are skipped.
+    /// </summary>
+    private void UpdatePingData(string lobbyOwnerCxId, Dictionary<string, object>[] lobbyMembers)
+    {
+        foreach (Node child in _pingDataContainer.GetChildren())
+        {
+            child.QueueFree();
+        }
+
+        foreach (var lobbyMember in lobbyMembers)
+        {
+            string memberCxId = (string)lobbyMember["cxId"];
+            string name = (string)lobbyMember["name"];
+            Dictionary<string, object> extra = (Dictionary<string, object>)lobbyMember["extra"];
+
+            Dictionary<string, object> pings =
+                extra.ContainsKey("pings") ? extra["pings"] as Dictionary<string, object> : null;
+
+            // Fall back to our locally captured pings for our own row (the lobby may not have
+            // echoed our extra["pings"] back yet).
+            if ((pings == null || pings.Count == 0) && memberCxId == _localCxId &&
+                _localPings != null && _localPings.Count > 0)
+            {
+                pings = new Dictionary<string, object>();
+                foreach (var kv in _localPings) pings[kv.Key] = kv.Value;
+            }
+
+            if (pings == null || pings.Count == 0) continue;
+
+            var parts = new List<string>();
+            foreach (var kv in pings)
+            {
+                int ms = Convert.ToInt32(kv.Value);
+                parts.Add(kv.Key + ":" + (ms >= 999 ? "T/O" : ms.ToString()));
+            }
+
+            string text = name + (memberCxId == lobbyOwnerCxId ? " [H]" : "") + "  " + string.Join("  ", parts);
+            var label = new Label { Text = text };
+            label.AddThemeFontSizeOverride("font_size", 12);
+            _pingDataContainer.AddChild(label);
         }
     }
 

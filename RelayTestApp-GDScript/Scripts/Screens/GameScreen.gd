@@ -29,6 +29,10 @@ const _PING_INTERVAL   := 2.0
 var _cursors:      Dictionary = {}
 # All active Splotch nodes (for clear_splotches)
 var _splotches:    Array      = []
+# Serializable splotch canvas {x,y,c,a} mirrored alongside _splotches. The host replays
+# this to a join-in-progress member (splotch_sync) so late joiners see splotches that were
+# painted before they connected.
+var _splotch_records: Array   = []
 # cxId → ping Label
 var _ping_labels:  Dictionary = {}
 # bidirectional cx_id ↔ net_id
@@ -135,6 +139,8 @@ func _do_shockwave(pos: Vector2, color_index: int, broadcast: bool, angle: float
 	_game_area.add_child(sp)  # must be before setup so @onready vars are valid
 	sp.setup(col, AppState.splotch_duration, angle)
 	_splotches.append(sp)
+	# Persist for join-in-progress replay (normalized coords, color index, synced angle).
+	_splotch_records.append({"x": pos.x / _GAME_W, "y": pos.y / _GAME_H, "c": color_index, "a": angle})
 
 	if broadcast:
 		var norm_x := pos.x / _GAME_W
@@ -194,6 +200,10 @@ func on_relay_system(op: String, msg: Dictionary) -> void:
 			if cx != "" and nid >= 0:
 				_cx_to_net_id[cx]  = nid
 				_net_id_to_cx[nid] = cx
+			# A new player joined mid-match: as host, replay the persisted splotch canvas to
+			# them. (Only CONNECT — NET_ID is the existing-player mappings we receive on join.)
+			if op == "CONNECT" and nid >= 0 and AppState.user_cx_id == AppState.lobby_owner_cx_id:
+				_send_splotch_sync(nid)
 		"DISCONNECT":
 			var cx: String = msg.get("cxId", "")
 			_remove_cursor_for_cx(cx)
@@ -228,6 +238,7 @@ func _clear_all_splotches() -> void:
 		if is_instance_valid(sp):
 			sp.queue_free()
 	_splotches.clear()
+	_splotch_records.clear()
 
 func _on_splotch_sync(data: Dictionary) -> void:
 	if data.get("first", false):
@@ -243,6 +254,44 @@ func _on_splotch_sync(data: Dictionary) -> void:
 		_game_area.add_child(sp)
 		sp.setup(col, AppState.splotch_duration, ang)
 		_splotches.append(sp)
+		# Keep the serializable canvas in step with what's displayed.
+		_splotch_records.append({"x": float(entry.get("x", 0.0)), "y": float(entry.get("y", 0.0)), "c": cidx, "a": ang})
+
+# Host → join-in-progress member: replay the persisted splotch canvas, chunked to stay
+# under the relay packet limit. Always sends at least one packet (first=true) so the joiner
+# clears its canvas even when nothing has been painted yet. Sent reliable+ordered.
+func _send_splotch_sync(net_id: int) -> void:
+	const MAX_CHUNK_BYTES := 900  # headroom below the relay MAX_PACKETSIZE (1024)
+	var is_first := true
+	var i := 0
+	var n := _splotch_records.size()
+
+	while true:
+		var batch: Array = []
+		var packet: PackedByteArray = PackedByteArray()
+		while i < n:
+			batch.append(_splotch_records[i])
+			var candidate := _build_splotch_sync_packet(is_first, batch)
+			if candidate.size() > MAX_CHUNK_BYTES and batch.size() > 1:
+				# This entry pushed the packet over the limit — back it out and flush.
+				batch.pop_back()
+				break
+			packet = candidate
+			i += 1
+
+		if packet.is_empty():
+			packet = _build_splotch_sync_packet(is_first, batch)
+
+		AppState.bc.relay_service.send(packet, net_id, true, true, BrainCloudRelay.CHANNEL_HIGH_PRIORITY_2)
+		is_first = false
+		if i >= n:
+			break
+
+func _build_splotch_sync_packet(is_first: bool, batch: Array) -> PackedByteArray:
+	return JSON.stringify({
+		"op": "splotch_sync",
+		"data": {"first": is_first, "splotches": batch}
+	}).to_utf8_buffer()
 
 func _on_clear_splotches_pressed() -> void:
 	_clear_all_splotches()

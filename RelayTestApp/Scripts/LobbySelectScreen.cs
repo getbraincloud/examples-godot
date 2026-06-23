@@ -7,13 +7,19 @@ public partial class LobbySelectScreen : Control
     public delegate void LogOutRequestedEventHandler();
 
     [Signal]
-    public delegate void MatchMakingRequestedEventHandler(string lobbyType);
+    public delegate void MatchMakingRequestedEventHandler(string lobbyType, string protocol, bool usePingData);
 
     // Display this user's name in greeting message once authenticated
     private Label _nameLabel;
 
     // Options Button containing lobby types configured for this app in the brainCloud portal
     private OptionButton _lobbyOptions;
+
+    // Options Button for the relay transport protocol (WEBSOCKET / TCP / UDP)
+    private OptionButton _protocolOptions;
+
+    // Toggle: ping regions before matchmaking to pick the lowest-latency region
+    private CheckBox _usePingDataCheck;
 
     // Display error messages relating to matchmaking
     private Label _errorMessageLabel;
@@ -28,6 +34,8 @@ public partial class LobbySelectScreen : Control
     {
         _nameLabel = GetNode<Label>("VBoxContainer/AuthenticatedUser/NameLabel");
         _lobbyOptions = GetNode<OptionButton>("VBoxContainer/LobbyOptions");
+        _protocolOptions = GetNode<OptionButton>("VBoxContainer/ProtocolOptions");
+        _usePingDataCheck = GetNode<CheckBox>("VBoxContainer/PingDataCheck");
         _errorMessageLabel = GetNode<Label>("VBoxContainer/ErrorMessage");
         _matchMakeButton = GetNode<Button>("VBoxContainer/MenuButtons/MatchMakeButton");
         _logOutButton = GetNode<Button>("VBoxContainer/MenuButtons/LogOutButton");
@@ -47,6 +55,22 @@ public partial class LobbySelectScreen : Control
     public void SetNameLabel(string name)
     {
         _nameLabel.Text = name;
+    }
+
+    /// <summary>
+    /// Populate the lobby-type dropdown from the app-configured list (AllLobbyTypes global
+    /// property). If the list is empty (not loaded yet) the scene's default items are kept.
+    /// </summary>
+    public void SetLobbyTypes(System.Collections.Generic.List<string> lobbyTypes)
+    {
+        if (lobbyTypes == null || lobbyTypes.Count == 0) return;
+
+        _lobbyOptions.Clear();
+        foreach (string lobbyType in lobbyTypes)
+        {
+            _lobbyOptions.AddItem(lobbyType);
+        }
+        _lobbyOptions.Selected = 0;
     }
 
     /// <summary>
@@ -84,7 +108,10 @@ public partial class LobbySelectScreen : Control
             return;
         }
 
+        // Relay transport protocol (defaults to WEBSOCKET if nothing selected)
+        string protocol = string.IsNullOrEmpty(_protocolOptions.Text) ? "WEBSOCKET" : _protocolOptions.Text;
+
         // Attempt to find or create a lobby
-        EmitSignal(SignalName.MatchMakingRequested, lobbyType);
+        EmitSignal(SignalName.MatchMakingRequested, lobbyType, protocol, _usePingDataCheck.ButtonPressed);
     }
 }

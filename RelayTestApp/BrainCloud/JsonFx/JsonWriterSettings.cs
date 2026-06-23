@@ -1,6 +1,3 @@
-#define DOT_NET 
-
-// Copyright 2026 bitHeads, Inc. All Rights Reserved.
 #region License
 /*---------------------------------------------------------------------------------*\
 
@@ -31,11 +28,11 @@
 \*---------------------------------------------------------------------------------*/
 #endregion License
 
-using System;
-using System.IO;
-
 namespace BrainCloud
 {
+    using System;
+    using System.IO;
+
     namespace JsonFx.Json
     {
         /// <summary>

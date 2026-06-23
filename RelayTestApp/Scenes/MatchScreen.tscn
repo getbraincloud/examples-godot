@@ -41,6 +41,34 @@ text = "LOBBY MEMBERS"
 [node name="MembersContainer" type="VBoxContainer" parent="MatchContainer/MatchInfo"]
 layout_mode = 2
 
+[node name="SettingsHeader" type="Label" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "SETTINGS"
+
+[node name="PlayersLabel" type="Label" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+text = "Players (shockwave mask):"
+
+[node name="PlayersMaskContainer" type="VBoxContainer" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+
+[node name="ReliableCheck" type="CheckBox" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+text = "Reliable"
+
+[node name="OrderedCheck" type="CheckBox" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+button_pressed = true
+text = "Ordered"
+
+[node name="ChannelLabel" type="Label" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+text = "Channel:"
+
+[node name="ChannelOption" type="OptionButton" parent="MatchContainer/MatchInfo"]
+layout_mode = 2
+
 [node name="GameSide" type="VBoxContainer" parent="MatchContainer"]
 layout_mode = 2
 size_flags_horizontal = 3

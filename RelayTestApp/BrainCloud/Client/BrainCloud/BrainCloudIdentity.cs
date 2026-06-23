@@ -1,18 +1,14 @@
-#define DOT_NET 
-
 // Copyright 2026 bitHeads, Inc. All Rights Reserved.
 //----------------------------------------------------
 // brainCloud client source code
-
 //----------------------------------------------------
 
 namespace BrainCloud
 {
-
-using System.Collections.Generic;
-using BrainCloud.Internal;
-using BrainCloud.Common;
-using System;
+    using System.Collections.Generic;
+    using BrainCloud.Internal;
+    using BrainCloud.Common;
+    using System;
 
     public class BrainCloudIdentity
     {
@@ -205,7 +201,7 @@ using System;
 
             if (Util.IsOptionalParameterValid(ids.authenticationSubType))
             {
-                data[OperationParam.AuthenticateServiceAuthenticateExternalId.Value] = ids.authenticationSubType;
+                data[OperationParam.IdentityServiceExternalAuthName.Value] = ids.authenticationSubType;
             }
 
             if (extraJson != null)
@@ -254,7 +250,7 @@ using System;
 
             if (Util.IsOptionalParameterValid(ids.authenticationSubType))
             {
-                data[OperationParam.AuthenticateServiceAuthenticateExternalId.Value] = ids.authenticationSubType;
+                data[OperationParam.IdentityServiceExternalAuthName.Value] = ids.authenticationSubType;
             }
 
             if (extraJson != null)
@@ -307,7 +303,7 @@ using System;
             Dictionary<string, object> data = new Dictionary<string, object>();
             data[OperationParam.IdentityServiceExternalId.Value] = externalId;
             data[OperationParam.IdentityServiceAuthenticationType.Value] = authenticationType.ToString();
-            data[OperationParam.IdentityServiceConfirmAnonymous.Value] = continueAnon;
+            data[OperationParam.IdentityServiceContinueAnon.Value] = continueAnon;
             
             if(extraJson != null)
             {
@@ -821,13 +817,36 @@ using System;
 
         /// <summary>
         /// Attach a Game Center identity to the current profile.
+        /// <para>Note: If the Game Center legacy authentication compatibility flag is enabled,
+        /// only <paramref name="gameCenterId"/> is required and all verification signature parameters are ignored</para>
         /// </summary>
         /// <remarks>
         /// Service Name - identity
         /// Service Operation - Attach
         /// </remarks>
         /// <param name="gameCenterId">
-        /// The user's game center id  (use the playerID property from the local GKPlayer object)
+        /// The user's Game Center Id which can be the PlayerId, GamePlayerId, or TeamPlayerId from the GKLocalPlayer object
+        /// </param>
+        /// <param name="timestamp">
+        /// The Timestamp value returned as part of the identity verification signature fetch from Game Center
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="publicKeyUrl">
+        /// The PublicKeyUrl value returned as part of the identity verification signature fetch from Game Center
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="signature">
+        /// The raw signature bytes returned as part of the identity verification signature fetch from Game Center (via GetSignature())
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="salt">
+        /// The raw salt bytes returned as part of the identity verification signature fetch from Game Center (via GetSalt())
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="teamPlayerId">
+        /// Optional for Game Center verification; only required when <paramref name="gameCenterId"/>
+        /// is set to a value other than TeamPlayerId (e.g. GamePlayerId), so that brainCloud can still associate
+        /// the user with their team-scoped identity
         /// </param>
         /// <param name="success">
         /// The method to call in event of successful login
@@ -840,21 +859,52 @@ using System;
         /// </param>
         public void AttachGameCenterIdentity(
             string gameCenterId,
+            ulong timestamp = 0,
+            string publicKeyUrl = "",
+            byte[] signature = null,
+            byte[] salt = null,
+            string teamPlayerId = "",
             SuccessCallback success = null,
             FailureCallback failure = null,
             object cbObject = null)
         {
-            AttachIdentity(gameCenterId, "", AuthenticationType.GameCenter, success, failure, cbObject);
+            string authenticationToken = BrainCloudAuthentication.CreateGameCenterAuthenticationToken(timestamp, publicKeyUrl, signature, salt, teamPlayerId);
+
+            AttachIdentity(gameCenterId, authenticationToken, AuthenticationType.GameCenter, success, failure, cbObject);
         }
 
-        /// <summary>Merge the profile associated with the specified Game Center identity with the current profile.
+        /// <summary>
+        /// Merge the profile associated with the specified Game Center identity with the current profile.
+        /// <para>Note: If the Game Center legacy authentication compatibility flag is enabled,
+        /// only <paramref name="gameCenterId"/> is required; all verification signature parameters are ignored</para>
         /// </summary>
         /// <remarks>
         /// Service Name - identity
         /// Service Operation - Merge
         /// </remarks>
         /// <param name="gameCenterId">
-        /// The user's game center id  (use the playerID property from the local GKPlayer object)
+        /// The user's Game Center Id which can be the PlayerId, GamePlayerId, or TeamPlayerId from the GKLocalPlayer object
+        /// </param>
+        /// <param name="timestamp">
+        /// The Timestamp value returned as part of the identity verification signature fetch from Game Center
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="publicKeyUrl">
+        /// The PublicKeyUrl value returned as part of the identity verification signature fetch from Game Center
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="signature">
+        /// The raw signature bytes returned as part of the identity verification signature fetch from Game Center (via GetSignature())
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="salt">
+        /// The raw salt bytes returned as part of the identity verification signature fetch from Game Center (via GetSalt())
+        /// <para>Required for modern Game Center verification</para>
+        /// </param>
+        /// <param name="teamPlayerId">
+        /// Optional for Game Center verification; only required when <paramref name="gameCenterId"/>
+        /// is set to a value other than TeamPlayerId (e.g. GamePlayerId), so that brainCloud can still associate
+        /// the user with their team-scoped identity
         /// </param>
         /// <param name="success">
         /// The method to call in event of successful login
@@ -867,11 +917,18 @@ using System;
         /// </param>
         public void MergeGameCenterIdentity(
             string gameCenterId,
+            ulong timestamp = 0,
+            string publicKeyUrl = "",
+            byte[] signature = null,
+            byte[] salt = null,
+            string teamPlayerId = "",
             SuccessCallback success = null,
             FailureCallback failure = null,
             object cbObject = null)
         {
-            MergeIdentity(gameCenterId, "", AuthenticationType.GameCenter, success, failure, cbObject);
+            string authenticationToken = BrainCloudAuthentication.CreateGameCenterAuthenticationToken(timestamp, publicKeyUrl, signature, salt, teamPlayerId);
+
+            MergeIdentity(gameCenterId, authenticationToken, AuthenticationType.GameCenter, success, failure, cbObject);
         }
 
         /// <summary>Detach the Game Center identity from the current profile.</summary>
@@ -2404,7 +2461,7 @@ using System;
             Dictionary<string, object> data = new Dictionary<string, object>();
             data[OperationParam.IdentityServiceExternalId.Value] = externalId;
             data[OperationParam.IdentityServiceAuthenticationType.Value] = authenticationType.ToString();
-            data[OperationParam.IdentityServiceConfirmAnonymous.Value] = continueAnon;
+            data[OperationParam.IdentityServiceContinueAnon.Value] = continueAnon;
 
             ServerCallback callback = BrainCloudClient.CreateServerCallback(success, failure, cbObject);
             ServerCall sc = new ServerCall(ServiceName.Identity, ServiceOperation.Detach, data, callback);

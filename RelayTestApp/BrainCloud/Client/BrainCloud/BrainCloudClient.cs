@@ -1,21 +1,17 @@
-#define DOT_NET 
-
 // Copyright 2026 bitHeads, Inc. All Rights Reserved.
 //----------------------------------------------------
 // brainCloud client source code
-
 //----------------------------------------------------
 
 namespace BrainCloud
 {
-
+    using System;
     using System.Collections.Generic;
     using BrainCloud.Internal;
     using BrainCloud.Common;
     using BrainCloud.JsonFx.Json;
 #if !XAMARIN
     using BrainCloud.Entity;
-    using System;
 #endif
 
 #if !(DOT_NET || GODOT)
@@ -23,7 +19,7 @@ namespace BrainCloud
     using UnityEngine.Assertions;
     using System.Text;
 #else
-using System.Globalization;
+    using System.Globalization;
 #endif
 
     #region Enums
@@ -111,6 +107,12 @@ using System.Globalization;
     /// <param name="jsonResponse">The JSON response describing the failure. This uses the
     /// usual brainCloud error format similar to this:</param>
     public delegate void FileUploadFailedCallback(string fileUploadId, int statusCode, int reasonCode, string jsonResponse);
+    
+    /// <summary>
+    /// Register a callback for when the long session re-authentication response is received
+    /// </summary>
+    /// <param name="jsonResponse">The JSON response from the server</param>
+    public delegate void LongSessionCallback(string jsonResponse);
 
     public delegate void JsonSerializationSuccessCallback(string jsonResponse);
     public delegate void JsonSerializationFailureCallback(int statusCode, int reasonCode, string errorMessage);
@@ -178,6 +180,7 @@ using System.Globalization;
         private BrainCloudMail _mailService;
         private BrainCloudMessaging _messagingService;
         private BrainCloudBlockchain _blockchain;
+        private BrainCloudCampaign _campaign;
         private BrainCloudGroupFile _groupFileService;
         
         // RTT service
@@ -268,13 +271,14 @@ using System.Globalization;
             _messagingService = new BrainCloudMessaging(this);
             _groupFileService = new BrainCloudGroupFile(this);
 
+            _blockchain = new BrainCloudBlockchain(this);
+            _campaign = new BrainCloudCampaign(this);
+
             // RTT 
             _lobbyService = new BrainCloudLobby(this);
             _chatService = new BrainCloudChat(this);
             _rttService = new BrainCloudRTT(_rttComms, this);
             _rsService = new BrainCloudRelay(_rsComms, this);
-
-            _blockchain = new BrainCloudBlockchain(this);
         }
         //---------------------------------------------------------------
 
@@ -595,6 +599,12 @@ using System.Globalization;
         {
             get { return _groupFileService; }
         }
+
+        public BrainCloudCampaign Campaign
+        {
+            get { return _campaign; }
+        }
+
         #endregion
 
         #region Service Getters
@@ -807,8 +817,6 @@ using System.Globalization;
             }
         }
         #endregion
-
-
 
         /// <summary>Method initializes the BrainCloudClient.</summary>
         /// <param name="secretKey">The secret key for your app</param>
@@ -1037,6 +1045,22 @@ using System.Globalization;
         public void DeregisterNetworkErrorCallback()
         {
             _comms.DeregisterNetworkErrorCallback();
+        }
+        
+        /// <summary>
+        /// Register a callback for when the long session re-authentication response is received
+        /// </summary>
+        public void RegisterAutoReconnectCallback(LongSessionCallback callback)
+        {
+            _comms.RegisterAutoReconnectCallback(callback);
+        }
+        
+        /// <summary>
+        /// De-registers the long session callback.
+        /// </summary>
+        public void DeregisterAutoReconnectCallback()
+        {
+            _comms.DeregisterAutoReconnectCallback();
         }
 
         /// <summary> Enable logging of brainCloud transactions (comms etc)</summary>
@@ -1370,10 +1394,13 @@ using System.Globalization;
                 return;
             }
 
-            // TODO: what is our default c# platform?
             Platform platform = Platform.Windows;
 #if !(DOT_NET || GODOT)
             platform = Platform.FromUnityRuntime();
+#elif GODOT
+            platform = Platform.GodotFromRuntime();
+#elif XAMARIN
+            platform = Platform.FromRuntime();
 #endif
 
             _appVersion = appVersion;

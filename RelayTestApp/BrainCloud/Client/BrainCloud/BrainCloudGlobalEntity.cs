@@ -1,18 +1,14 @@
-#define DOT_NET 
-
 // Copyright 2026 bitHeads, Inc. All Rights Reserved.
 //----------------------------------------------------
 // brainCloud client source code
-
 //----------------------------------------------------
 
 namespace BrainCloud
 {
-
-using System.Collections.Generic;
-using BrainCloud.JsonFx.Json;
-using BrainCloud.Internal;
-using BrainCloud.Common;
+    using System.Collections.Generic;
+    using BrainCloud.JsonFx.Json;
+    using BrainCloud.Internal;
+    using BrainCloud.Common;
 
     public class BrainCloudGlobalEntity
     {

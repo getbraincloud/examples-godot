@@ -3,7 +3,7 @@
 extends Node2D
 
 const _SPLAT_ANIM_TIME := 0.3
-const _BASE_ALPHA      := 0.55
+const _BASE_ALPHA      := 1.0
 const _FADE_SECS       := 3.0
 const _DISPLAY_SIZE    := 64.0   # game-world diameter — matches SPLOTCH_DISPLAY_SIZE in globals.h
 

@@ -1,12 +1,9 @@
-#define DOT_NET 
-
-// Copyright 2026 bitHeads, Inc. All Rights Reserved.
-using System;
-using System.Collections.Generic;
-using System.Net;
-
 namespace BrainCloud
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Net;
+
     namespace ModernHttpClient
     {
         public class NativeCookieHandler

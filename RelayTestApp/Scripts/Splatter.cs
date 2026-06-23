@@ -19,7 +19,16 @@ public partial class Splatter : Sprite2D
 	{
 		targetScale = Scale.X;
 		random = new Random();
-		Rotate(RandomRange(0, Mathf.Tau));
+		// Rotation is set explicitly via SetAngle() with a network-synced angle so every
+		// client renders the same splotch at the same orientation (do NOT randomize here).
+	}
+
+	/// <summary>
+	/// Apply the (network-synced) rotation, in radians, so all clients match.
+	/// </summary>
+	public void SetAngle(float radians)
+	{
+		Rotation = radians;
 	}
 
 	public void SetColour(Color newColour)
