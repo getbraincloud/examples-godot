@@ -154,15 +154,19 @@ func _enable_rtt() -> Dictionary:
 func _find_or_create_lobby(lobby_type: String, use_ping: bool) -> Dictionary:
 	var algo  := {"strategy": "ranged-absolute", "alignment": "center", "ranges": [1000]}
 	var extra := {"colorIndex": AppState.my_color_index, "presentSinceStart": true}
+	# CPP mainMenu.cpp: a "Team*" lobby type joins team "alpha" (CPP's UI also lets you pick
+	# Beta); every other lobby type uses "all". Sending "all" for a Team* lobby breaks team
+	# grouping and interop with the CPP/C# clients.
+	var team_code := "alpha" if lobby_type.begins_with("Team") else "all"
 	if use_ping and not AppState.ping_data.is_empty():
 		extra["pings"] = AppState.ping_data
 		AppState.bc.lobby_service.set_ping_data(AppState.ping_data)
 		return await AppState.bc.lobby_service.find_or_create_lobby_with_ping_data(
-			lobby_type, 0, 1, algo, {}, {}, false, extra, "all", []
+			lobby_type, 0, 1, algo, {}, {}, false, extra, team_code, []
 		)
 	else:
 		return await AppState.bc.lobby_service.find_or_create_lobby(
-			lobby_type, 0, 1, algo, {}, {}, false, extra, "all", []
+			lobby_type, 0, 1, algo, {}, {}, false, extra, team_code, []
 		)
 
 # ── Region ping (for use_ping_data path) ─────────────────────────────────────

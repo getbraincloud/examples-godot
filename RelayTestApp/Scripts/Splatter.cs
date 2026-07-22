@@ -13,12 +13,9 @@ public partial class Splatter : Sprite2D
 	private float targetScale = 0.5f;
 	private float fadeDuration = 10f;
 
-	private Random random;
-
 	public override void _Ready()
 	{
 		targetScale = Scale.X;
-		random = new Random();
 		// Rotation is set explicitly via SetAngle() with a network-synced angle so every
 		// client renders the same splotch at the same orientation (do NOT randomize here).
 	}
@@ -33,7 +30,10 @@ public partial class Splatter : Sprite2D
 
 	public void SetColour(Color newColour)
 	{
-		Modulate = AlterColour(newColour);
+		// Render the exact palette colour. The previous ±7% random tint made the same
+		// colorIndex render a different shade on every client and every splotch, breaking
+		// cross-client colour parity — the GDScript/CPP clients use the colour verbatim.
+		Modulate = newColour;
 	}
 
 	public void SetLifespan(float newLifespan)
@@ -52,26 +52,10 @@ public partial class Splatter : Sprite2D
 		return new Color(oldColor.R, oldColor.G, oldColor.B, newAlpha);
 	}
 
-	private Color AlterColour(Color oldColor)
-	{
-		float alt = 0.07f;
-		return new Color(
-			oldColor.R * (1 + RandomRange(-alt, alt)), 
-			oldColor.G * (1 + RandomRange(-alt, alt)), 
-			oldColor.B * (1 + RandomRange(-alt, alt)),
-			oldColor.A
-			);
-	}
-
 	private float SplatSizeOverTime(float t, float a, float b)
 	{
 		float grow = (1 + b) * t / a;
 		float shrink = -(((1 + b) * t) - ((2 + b) * a)) / a;
 		return Mathf.Min(grow, shrink);
-	}
-
-	private float RandomRange(float min, float max)
-	{
-		return (random.NextSingle() * (max - min)) + min;
 	}
 }

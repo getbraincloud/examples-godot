@@ -12,9 +12,9 @@ config_version=5
 
 config/name="Cursor Party"
 run/main_scene="res://Scenes/Main.tscn"
-config/features=PackedStringArray("4.1", "C#", "Forward Plus")
-boot_splash/image="res://Art/logobc-app-icon-rounded_crop.png"
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 boot_splash/fullsize=false
+boot_splash/image="res://Art/logobc-app-icon-rounded_crop.png"
 config/icon="res://Art/logobc-app-icon-rounded_crop.png"
 
 [display]

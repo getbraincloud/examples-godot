@@ -35,9 +35,10 @@ func set_ready(is_ready: bool) -> void:
 	_name_label.modulate.a = 1.0 if is_ready else 0.55
 
 func set_ping(ms: int) -> void:
+	# Match CPP: a timed-out region (>=999) shows "T/O"; unmeasured shows "--".
 	if ms < 0:
-		_ping_label.text = "-- ms"
-	elif ms > 999:
-		_ping_label.text = "999+ ms"
+		_ping_label.text = "--"
+	elif ms >= 999:
+		_ping_label.text = "T/O"
 	else:
 		_ping_label.text = "%d ms" % ms

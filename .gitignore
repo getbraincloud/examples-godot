@@ -4,3 +4,5 @@ RelayTestApp/build/ids.txt
 .claude/settings.json
 /RelayTestApp-GDScript/.godot/editor
 /RelayTestApp-GDScript/build
+/RelayTestApp/build
+/RelayTestApp-GDScript/.godot/editor
