@@ -291,6 +291,17 @@ func _connect_relay(room_data: Dictionary) -> void:
 
 	# WSS stays SSL; WS stays plain. Relay servers do not use TLS.
 
+	# Godot's Web export runs the browser's native WebSocket implementation: it cannot
+	# use raw TCP/UDP sockets at all (no StreamPeerTCP/PacketPeerUDP in a browser), and
+	# it cannot open a plain ws:// connection from this page (served over https) —
+	# browser mixed-content policy, with no client-side override. So on web, ignore
+	# whatever protocol was picked on the lobby select screen and force the secure
+	# websocket port whenever the server offers one.
+	if OS.has_feature("web") and ports.has("wss"):
+		proto   = "wss"
+		use_ssl = true
+		port    = int(ports["wss"])
+
 	print("[Relay] room_data keys: ", room_data.keys())
 	print("[Relay] connectData: ", connect_data)
 	print("[Relay] host='%s' port=%d proto='%s' ssl=%s" % [host, port, proto, str(use_ssl)])
@@ -300,6 +311,7 @@ func _connect_relay(room_data: Dictionary) -> void:
 		"host"    : host,
 		"port"    : port,
 		"ssl"     : use_ssl,
+		"protocol": proto,
 		"cxId"    : AppState.user_cx_id,
 		"lobbyId" : AppState.lobby_id,
 		"passcode": room_data.get("passcode", "")
