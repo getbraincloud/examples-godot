@@ -67,8 +67,7 @@ func _build_color_grid() -> void:
 	_color_grid.columns = _COLS
 	var palette := AppState.color_palette
 	if palette.is_empty():
-		palette = [Color.BLACK, Color.MAGENTA, Color.RED, Color.BLUE,
-				   Color.CYAN, Color.GREEN, Color.YELLOW, Color.WHITE]
+		palette = AppState.default_palette()
 
 	for i in palette.size():
 		var btn := ColorRect.new()
@@ -221,6 +220,11 @@ func _refresh_info() -> void:
 		for r: String in (m.get("extra", {}).get("pings", {}) as Dictionary).keys():
 			if not all_regions.has(r):
 				all_regions.append(r)
+	# Also seed from our own captured pings so our columns appear before the lobby echoes
+	# our extra["pings"] back to us (mirrors CPP seeding the region union from local data).
+	for r: String in AppState.ping_data.keys():
+		if not all_regions.has(r):
+			all_regions.append(r)
 	all_regions.sort()
 
 	if all_regions.is_empty():
@@ -259,8 +263,17 @@ func _refresh_info() -> void:
 		name_lbl.add_theme_font_size_override("font_size", 11)
 		name_lbl.custom_minimum_size = Vector2(120, 0)
 		name_lbl.text = "%s%s" % [m.get("name", "?"), " [Host]" if is_host else ""]
+		# Tint each member's name by their chosen palette colour, so the lobby ping table matches
+		# the C#/CPP clients (which colour the member name) — visual parity across clients.
+		var cidx: int = int(m.get("extra", {}).get("colorIndex", 0))
+		if cidx >= 0 and cidx < AppState.color_palette.size():
+			name_lbl.add_theme_color_override("font_color", AppState.color_palette[cidx])
 		member_row.add_child(name_lbl)
 		var pings: Dictionary = m.get("extra", {}).get("pings", {})
+		# Our own row may render before the lobby echoes our extra["pings"] back — fall back to
+		# the locally captured ping data so our cells aren't blank (mirrors CPP self-fallback).
+		if pings.is_empty() and m.get("cxId", "") == AppState.user_cx_id:
+			pings = AppState.ping_data
 		for r: String in all_regions:
 			var ms: int = int(pings.get(r, -1))
 			var ping_lbl := Label.new()
@@ -276,7 +289,8 @@ func _refresh_info() -> void:
 				ping_lbl.text = "%d ms" % ms
 				ping_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3))
 			else:
-				ping_lbl.text = "%d ms" % ms
+				# >=999 is a timeout — show CPP's "T/O" instead of a raw number.
+				ping_lbl.text = "T/O" if ms >= 999 else "%d ms" % ms
 				ping_lbl.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 			member_row.add_child(ping_lbl)
 		_ping_regions.add_child(member_row)

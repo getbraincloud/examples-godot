@@ -23,6 +23,7 @@ func _try_reauthenticate() -> void:
 	var response: Dictionary = await AppState.bc.reauthenticate()
 	if response.get("status", 0) == 200:
 		AppState.username = _username_field.text
+		await _sync_player_name()
 		await _load_global_properties()
 		authenticated.emit()
 	else:
@@ -43,6 +44,7 @@ func _on_login_pressed() -> void:
 	if response.get("status", 0) == 200:
 		AppState.username = username
 		_save_credentials(username, password)
+		await _sync_player_name()
 		await _load_global_properties()
 		authenticated.emit()
 	else:
@@ -90,6 +92,22 @@ func _load_global_properties() -> void:
 
 	# SplotchDuration — integer seconds (-1 = forever)
 	AppState.splotch_duration = int(data.get("SplotchDuration", {}).get("value", "-1"))
+
+# Drive the server-side playerName from login — mirrors the CPP RelayTestApp
+# (app.cpp handlePlayerState/submitName). The lobby member "name" (rendered on
+# cursors and in the member lists) comes from the profile playerName, so if the
+# account has none yet we push the entered username via update_user_name; otherwise
+# we adopt the stored name. Without this the username is never associated server-side.
+func _sync_player_name() -> void:
+	var resp: Dictionary = await AppState.bc.player_state_service.read_player_state()
+	var server_name := ""
+	if resp.get("status", 0) == 200:
+		server_name = str(resp.get("data", {}).get("playerName", "")).strip_edges()
+	if server_name.is_empty():
+		if not AppState.username.strip_edges().is_empty():
+			await AppState.bc.player_state_service.update_user_name(AppState.username)
+	else:
+		AppState.username = server_name
 
 func _set_busy(busy: bool) -> void:
 	_login_button.disabled = busy

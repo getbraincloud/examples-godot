@@ -13,13 +13,19 @@ var _color:    Color = Color.WHITE
 var _elapsed:  float = 0.0
 var _duration: int   = -1
 
-func setup(color: Color, duration: int, angle: float) -> void:
+func setup(color: Color, duration: int, angle: float, start_time_ms: int = -1) -> void:
 	_color         = color
 	_duration      = duration
 	_sprite.rotation = angle
 	_sprite.modulate  = Color(color, _BASE_ALPHA)
 	var tex_w := float(_sprite.texture.get_width())
 	_sprite.scale = Vector2.ONE * (_DISPLAY_SIZE / tex_w)
+	# Join-in-progress: a synced splotch carries its original creation time (epoch ms). Seed
+	# _elapsed from it so the fade/expiry (and the one-shot pop) continue from the true age
+	# instead of restarting on the joiner — mirrors CPP preserving startTimeMs.
+	if start_time_ms > 0:
+		var now_ms := int(Time.get_unix_time_from_system() * 1000.0)
+		_elapsed = maxf(0.0, float(now_ms - start_time_ms) / 1000.0)
 
 func _process(delta: float) -> void:
 	_elapsed += delta

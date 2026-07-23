@@ -11,7 +11,7 @@ public partial class Main : Node
 {
 	// Visuals
 	// 40-colour palette aligned with the Java/C#/JS/C++ CursorParty clients. Overwritten at
-	// runtime from the "Colors" global property (see OnGetColoursCallback); this is the default.
+	// runtime from the "Colours" global property (see OnGetColoursCallback); this is the default.
 	public static Color[] Colours =
 	{
 		// Row 0 — vivid
@@ -89,7 +89,7 @@ public partial class Main : Node
 	// Persisted splotch canvas for the current match. The host replays this to a
 	// join-in-progress member (via SendToPlayers) so late joiners see the splotches
 	// that were created before they connected.
-	private class SplotchRecord { public float X; public float Y; public int ColorIndex; public float Angle; }
+	private class SplotchRecord { public float X; public float Y; public int ColorIndex; public float Angle; public long StartTimeMs; }
 	private readonly List<SplotchRecord> _splotches = new List<SplotchRecord>();
 	
 	// User Data
@@ -498,6 +498,13 @@ public partial class Main : Node
 		float yCoord = pos.Y;
 		xCoord *= 800;
 		yCoord *= 600;
+
+		// Expanding shockwave ring at the impact point — mirrors the GDScript/C++ clients,
+		// which draw a ring alongside the paint splotch (this app was missing it entirely).
+		var shockwave = new Shockwave();
+		_cursorParty.GetNode("SplatterMask").AddChild(shockwave);
+		shockwave.Position = new Vector2(xCoord, yCoord);
+		shockwave.Setup(Colours[colourIndex]);
 
 		// Create new Splatter and add it to the list
 		var paintSplatter = GD.Load<PackedScene>(splatterScene);
@@ -1064,7 +1071,7 @@ public partial class Main : Node
 				float angle = data.ContainsKey("angle") ? (float)Convert.ToDouble(data["angle"]) : GD.Randf() * Mathf.Tau;
 				CreateSplatter(new Vector2(xCoord, yCoord), colourIndex, angle);
 				// Record in the persisted canvas so it can be replayed to JIP members
-				_splotches.Add(new SplotchRecord { X = xCoord, Y = yCoord, ColorIndex = colourIndex, Angle = angle });
+				_splotches.Add(new SplotchRecord { X = xCoord, Y = yCoord, ColorIndex = colourIndex, Angle = angle, StartTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() });
 				break;
 			default:
 				break;
@@ -1090,9 +1097,13 @@ public partial class Main : Node
 			float y = (float)Convert.ToDouble(sd["y"]);
 			int c = Convert.ToInt32(sd["c"]);
 			float a = sd.ContainsKey("a") ? (float)Convert.ToDouble(sd["a"]) : GD.Randf() * Mathf.Tau;
+			// Original creation time (epoch ms), carried so a re-sync preserves age and dotnet/
+			// react/cpp receivers fade correctly — matches CPP. (The Splatter visual doesn't yet
+			// consume this locally; that's the pending fade rework.)
+			long t = sd.ContainsKey("t") ? Convert.ToInt64(sd["t"]) : 0;
 
 			CreateSplatter(new Vector2(x, y), c, a);
-			_splotches.Add(new SplotchRecord { X = x, Y = y, ColorIndex = c, Angle = a });
+			_splotches.Add(new SplotchRecord { X = x, Y = y, ColorIndex = c, Angle = a, StartTimeMs = t });
 		}
 	}
 
@@ -1134,7 +1145,7 @@ public partial class Main : Node
 			while (i < _splotches.Count)
 			{
 				SplotchRecord s = _splotches[i];
-				batch.Add(new Dictionary<string, object> { { "x", s.X }, { "y", s.Y }, { "c", s.ColorIndex }, { "a", s.Angle } });
+				batch.Add(new Dictionary<string, object> { { "x", s.X }, { "y", s.Y }, { "c", s.ColorIndex }, { "a", s.Angle }, { "t", s.StartTimeMs } });
 
 				byte[] candidate = BuildSplotchSyncPacket(isFirst, batch);
 				if (candidate.Length > maxChunkBytes && batch.Count > 1)
@@ -1215,10 +1226,33 @@ public partial class Main : Node
 
 					LoadScene("Match ended. Returning to lobby . . .");
 
+					// Tear down the relay (mirrors CPP app.cpp / GDScript _on_match_ended). Without
+					// this the relay stays connected and the next match stacks another set of
+					// Register*Callback handlers on top of the live connection.
+					_brainCloudWrapper.RelayService.DeregisterRelayCallback();
+					_brainCloudWrapper.RelayService.DeregisterSystemCallback();
+					_brainCloudWrapper.RelayService.Disconnect();
+
 					_userIsReady = false;
 					_userWasPresentSinceStart = false;
 
-					//GoToLobbyScreen();
+					// Non-host re-readies for the next round (mirrors CPP updateReady(true) /
+					// GDScript). This also keeps a ready quorum so the host can start again.
+					if (_lobby != null && (string)_lobby["ownerCxId"] != _userCxID && !string.IsNullOrEmpty(_lobbyID))
+					{
+						_userIsReady = true;
+						Dictionary<string, object> readyExtra = new Dictionary<string, object>()
+						{
+							{ "colorIndex", _userColourIndex }
+						};
+						if (_pingData.Count > 0) readyExtra["pings"] = _pingData;
+						_brainCloudWrapper.LobbyService.UpdateReady(_lobbyID, _userIsReady, readyExtra);
+					}
+
+					// Return to the lobby directly instead of waiting for a later RTT lobby event —
+					// in an all-C# lobby no such event arrives, leaving everyone stuck on the
+					// "Returning to lobby" screen.
+					GoToLobbyScreen();
 
 					break;
 				default:
@@ -1373,7 +1407,7 @@ public partial class Main : Node
 
 		// Create the splatter locally and record it in the persisted canvas (for JIP replay)
 		CreateSplatter(pos, _userColourIndex, angle);
-		_splotches.Add(new SplotchRecord { X = pos.X, Y = pos.Y, ColorIndex = _userColourIndex, Angle = angle });
+		_splotches.Add(new SplotchRecord { X = pos.X, Y = pos.Y, ColorIndex = _userColourIndex, Angle = angle, StartTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() });
 	}
 
 	/// <summary>
@@ -1489,7 +1523,9 @@ public partial class Main : Node
 	{
 		string[] properties;
 
-		properties = new string[]{"Colors"};
+		// Read both spellings: the app's palette property is "Colours" (comma-separated hex),
+		// which the C++ and GDScript clients read; "Colors" is accepted as a fallback.
+		properties = new string[]{"Colours", "Colors"};
 		_brainCloudWrapper.GlobalAppService.ReadSelectedProperties(properties, OnGetColoursCallback, null);
 
 		properties = new string[] { "PaintLifespan" };
@@ -1543,27 +1579,30 @@ public partial class Main : Node
 	{
 		var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
 		var data = response["data"] as Dictionary<string, object>;
-		// "Colors" may be undefined on the app — fall back to the built-in 40-colour default.
-		if (data == null || !data.ContainsKey("Colors")) return;
-		var property = data["Colors"] as Dictionary<string, object>;
-		if (property == null || !property.ContainsKey("value")) return;
+		if (data == null) return;
 
-		// The "Colors" global property is a JSON array of hex strings, e.g. ["#FF3333","#FF8800"]
-		// (same format the Java/C#/JS/C++ clients read). Rebuild the palette sized to the array so
-		// all 40 (or however many) colours are available — never index into a fixed-size array.
-		var value = property["value"] as string;
+		// The palette property is "Colours" (comma-separated bare hex, e.g. "FF3333,FF8800") on
+		// this app — the format the C++ and GDScript clients read. Accept "Colors" and a JSON-array
+		// value too so cursor/splotch colours match regardless of how the app stores the property.
+		// An undefined/empty value keeps the built-in 40-colour default (never index a fixed array).
+		var property = (data.ContainsKey("Colours") ? data["Colours"]
+					   : (data.ContainsKey("Colors") ? data["Colors"] : null)) as Dictionary<string, object>;
+		if (property == null || !property.ContainsKey("value")) return;
+		var value = (property["value"] as string)?.Trim();
 		if (string.IsNullOrEmpty(value)) return;
 
-		string[] hexValues = JsonReader.Deserialize<string[]>(value);
+		string[] hexValues = value.StartsWith("[")
+			? JsonReader.Deserialize<string[]>(value)   // JSON array of hex strings
+			: value.Split(',');                          // comma-separated hex
 		if (hexValues == null || hexValues.Length == 0) return;
 
-		var palette = new Color[hexValues.Length];
-		for (int ii = 0; ii < hexValues.Length; ii++)
+		var palette = new List<Color>();
+		foreach (var raw in hexValues)
 		{
-			string hex = hexValues[ii].TrimStart('#');
-			palette[ii] = new Color(string.Concat("#", hex));
+			string hex = raw.Trim().TrimStart('#');
+			if (hex.Length > 0) palette.Add(new Color(string.Concat("#", hex)));
 		}
-		Colours = palette;
+		if (palette.Count > 0) Colours = palette.ToArray();
 	}
 
 	private void OnGetLifespanCallback(string jsonResponse, object cbObject)

@@ -16,6 +16,9 @@ public partial class LobbyScreen : Control
     // Holds the dynamically built colour-swatch buttons (one per palette entry).
     private GridContainer _colourButtons;
 
+    // Lobby id + region + player-count header, shown above the colour grid (matches GDScript).
+    private Label _lobbyInfoLabel;
+
     // Holds/Displays members in lobby
     private VBoxContainer _lobbyMembersContainer;
 
@@ -56,6 +59,14 @@ public partial class LobbyScreen : Control
         // Hide buttons when not necessary
         _joinButton.Hide();
         _startButton.Hide();
+
+        // Lobby id / region / player-count header, prepended above the colour grid so the
+        // C# lobby shows the same context info as the GDScript client.
+        _lobbyInfoLabel = new Label();
+        _lobbyInfoLabel.AddThemeFontSizeOverride("font_size", 14);
+        var vbox = GetNode<VBoxContainer>("VBoxContainer");
+        vbox.AddChild(_lobbyInfoLabel);
+        vbox.MoveChild(_lobbyInfoLabel, 0);
     }
 
     /// <summary>
@@ -133,6 +144,11 @@ public partial class LobbyScreen : Control
         string lobbyOwnerCxId = (string)lobby["ownerCxId"];
         Dictionary<string, object>[] lobbyMembers = (Dictionary<string, object>[])lobby["members"];
 
+        // Header: lobby id, region (id prefix), and current player count.
+        string lobbyId = lobby.ContainsKey("id") ? lobby["id"]?.ToString() ?? "" : "";
+        string region = lobbyId.Contains(":") ? lobbyId.Split(':')[0] : lobbyId;
+        _lobbyInfoLabel.Text = $"Lobby: {lobbyId}\nRegion: {region}\nPlayers: {lobbyMembers.Length}";
+
         foreach (var lobbyMember in lobbyMembers)
         {
             string memberCxId = (string)lobbyMember["cxId"];
@@ -179,37 +195,92 @@ public partial class LobbyScreen : Control
             child.QueueFree();
         }
 
-        foreach (var lobbyMember in lobbyMembers)
+        // Pings for a member: their shared extra["pings"], falling back to our local capture
+        // for our own row (the lobby may not have echoed it back yet).
+        Dictionary<string, object> PingsFor(Dictionary<string, object> member)
         {
-            string memberCxId = (string)lobbyMember["cxId"];
-            string name = (string)lobbyMember["name"];
-            Dictionary<string, object> extra = (Dictionary<string, object>)lobbyMember["extra"];
-
-            Dictionary<string, object> pings =
-                extra.ContainsKey("pings") ? extra["pings"] as Dictionary<string, object> : null;
-
-            // Fall back to our locally captured pings for our own row (the lobby may not have
-            // echoed our extra["pings"] back yet).
-            if ((pings == null || pings.Count == 0) && memberCxId == _localCxId &&
-                _localPings != null && _localPings.Count > 0)
+            string cxId = (string)member["cxId"];
+            var extra = (Dictionary<string, object>)member["extra"];
+            var p = extra.ContainsKey("pings") ? extra["pings"] as Dictionary<string, object> : null;
+            if ((p == null || p.Count == 0) && cxId == _localCxId && _localPings != null && _localPings.Count > 0)
             {
-                pings = new Dictionary<string, object>();
-                foreach (var kv in _localPings) pings[kv.Key] = kv.Value;
+                p = new Dictionary<string, object>();
+                foreach (var kv in _localPings) p[kv.Key] = kv.Value;
             }
+            return p;
+        }
 
-            if (pings == null || pings.Count == 0) continue;
+        // Union of every region any member reported, sorted, so all rows share the same columns.
+        var regions = new List<string>();
+        foreach (var m in lobbyMembers)
+        {
+            var p = PingsFor(m);
+            if (p != null) foreach (var r in p.Keys) if (!regions.Contains(r)) regions.Add(r);
+        }
+        if (regions.Count == 0) return;
+        regions.Sort();
 
-            var parts = new List<string>();
-            foreach (var kv in pings)
+        var title = new Label { Text = "Ping Data (ms)" };
+        title.AddThemeFontSizeOverride("font_size", 13);
+        _pingDataContainer.AddChild(title);
+
+        // Header row: empty name cell + one column per region.
+        var header = new HBoxContainer();
+        header.AddThemeConstantOverride("separation", 8);
+        var headerName = new Label();
+        headerName.CustomMinimumSize = new Vector2(120, 0);
+        header.AddChild(headerName);
+        foreach (var r in regions)
+        {
+            var lbl = new Label { Text = r };
+            lbl.AddThemeFontSizeOverride("font_size", 11);
+            lbl.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.7f));
+            lbl.CustomMinimumSize = new Vector2(80, 0);
+            header.AddChild(lbl);
+        }
+        _pingDataContainer.AddChild(header);
+
+        // One row per member (ALL members; "—" for a region they didn't report), name tinted by
+        // their colour, "T/O" at >=999 — mirrors the GDScript client's table exactly.
+        foreach (var m in lobbyMembers)
+        {
+            string memberCxId = (string)m["cxId"];
+            string name = (string)m["name"];
+            var extra = (Dictionary<string, object>)m["extra"];
+            int colourIndex = extra.ContainsKey("colorIndex") ? Convert.ToInt32(extra["colorIndex"]) : 0;
+            var pings = PingsFor(m);
+
+            var row = new HBoxContainer();
+            row.AddThemeConstantOverride("separation", 8);
+            var nameLbl = new Label { Text = name + (memberCxId == lobbyOwnerCxId ? " [H]" : "") };
+            nameLbl.AddThemeFontSizeOverride("font_size", 11);
+            nameLbl.CustomMinimumSize = new Vector2(120, 0);
+            if (colourIndex >= 0 && colourIndex < Main.Colours.Length)
+                nameLbl.AddThemeColorOverride("font_color", Main.Colours[colourIndex]);
+            row.AddChild(nameLbl);
+
+            foreach (var r in regions)
             {
-                int ms = Convert.ToInt32(kv.Value);
-                parts.Add(kv.Key + ":" + (ms >= 999 ? "T/O" : ms.ToString()));
+                var cell = new Label();
+                cell.AddThemeFontSizeOverride("font_size", 11);
+                cell.CustomMinimumSize = new Vector2(80, 0);
+                if (pings != null && pings.ContainsKey(r))
+                {
+                    int ms = Convert.ToInt32(pings[r]);
+                    cell.Text = ms >= 999 ? "T/O" : ms + " ms";
+                    cell.AddThemeColorOverride("font_color",
+                        ms < 100 ? new Color(0.3f, 1f, 0.4f)
+                        : ms < 250 ? new Color(1f, 1f, 0.3f)
+                        : new Color(1f, 0.4f, 0.4f));
+                }
+                else
+                {
+                    cell.Text = "—";
+                    cell.AddThemeColorOverride("font_color", new Color(0.5f, 0.5f, 0.5f));
+                }
+                row.AddChild(cell);
             }
-
-            string text = name + (memberCxId == lobbyOwnerCxId ? " [H]" : "") + "  " + string.Join("  ", parts);
-            var label = new Label { Text = text };
-            label.AddThemeFontSizeOverride("font_size", 12);
-            _pingDataContainer.AddChild(label);
+            _pingDataContainer.AddChild(row);
         }
     }
 

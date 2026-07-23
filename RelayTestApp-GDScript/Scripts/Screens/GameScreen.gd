@@ -70,6 +70,14 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_ping_timer += delta
 
+	# Render our OWN cursor locally, tracked every frame so the coloured arrow follows the
+	# pointer smoothly — CPP/dotnet show the local player their own arrow (remote cursors are
+	# driven by relay "move" messages in _on_move, which skips our own net_id).
+	if AppState.my_net_id >= 0:
+		var lp := _game_area.get_local_mouse_position()
+		_get_or_create_cursor(AppState.my_net_id).move_to(
+			clampf(lp.x / _GAME_W, 0.0, 1.0), clampf(lp.y / _GAME_H, 0.0, 1.0))
+
 	if AppState.game_start_time_ms <= 0:
 		return
 
@@ -137,10 +145,12 @@ func _do_shockwave(pos: Vector2, color_index: int, broadcast: bool, angle: float
 	var sp := _SPLOTCH_SCENE.instantiate() as Node2D
 	sp.position = pos
 	_game_area.add_child(sp)  # must be before setup so @onready vars are valid
+	var now_ms := int(Time.get_unix_time_from_system() * 1000.0)
 	sp.setup(col, AppState.splotch_duration, angle)
 	_splotches.append(sp)
-	# Persist for join-in-progress replay (normalized coords, color index, synced angle).
-	_splotch_records.append({"x": pos.x / _GAME_W, "y": pos.y / _GAME_H, "c": color_index, "a": angle})
+	# Persist for join-in-progress replay (normalized coords, color index, synced angle, and
+	# creation timestamp so a late joiner ages/fades it from the original time — matches CPP).
+	_splotch_records.append({"x": pos.x / _GAME_W, "y": pos.y / _GAME_H, "c": color_index, "a": angle, "t": now_ms})
 
 	if broadcast:
 		var norm_x := pos.x / _GAME_W
@@ -226,10 +236,16 @@ func _on_remote_shockwave(net_id: int, data: Dictionary) -> void:
 					   float(data.get("y", 0.0)) * _GAME_H)
 	_do_shockwave(pos, color_index, false, angle)
 
+# Format a relay ping for the HUD, matching CPP: "..." until first received, "T/O" at >=999.
+func _fmt_ping(ms: int) -> String:
+	if ms < 0:    return "..."
+	if ms >= 999: return "T/O"
+	return "%d ms" % ms
+
 func _on_remote_ping(net_id: int, ms: int) -> void:
 	var cx: String = _net_id_to_cx.get(net_id, "")
 	if cx != "" and _ping_labels.has(cx):
-		(_ping_labels[cx] as Label).text = ("-- ms" if ms < 0 else "%d ms" % ms)
+		(_ping_labels[cx] as Label).text = _fmt_ping(ms)
 
 # ── Clear splotches ───────────────────────────────────────────────────────────
 
@@ -248,14 +264,16 @@ func _on_splotch_sync(data: Dictionary) -> void:
 		var sy   := float(entry.get("y", 0.0)) * _GAME_H
 		var cidx := int(entry.get("c", 0))
 		var ang  := float(entry.get("a", randf() * TAU))
+		var t_ms := int(entry.get("t", 0))
 		var col  := AppState.color_palette[cidx] if cidx < AppState.color_palette.size() else Color.WHITE
 		var sp   := _SPLOTCH_SCENE.instantiate() as Node2D
 		sp.position = Vector2(sx, sy)
 		_game_area.add_child(sp)
-		sp.setup(col, AppState.splotch_duration, ang)
+		# Pass the original creation time so age/fade continue from it rather than restarting.
+		sp.setup(col, AppState.splotch_duration, ang, t_ms)
 		_splotches.append(sp)
-		# Keep the serializable canvas in step with what's displayed.
-		_splotch_records.append({"x": float(entry.get("x", 0.0)), "y": float(entry.get("y", 0.0)), "c": cidx, "a": ang})
+		# Keep the serializable canvas in step with what's displayed (carry t forward for re-sync).
+		_splotch_records.append({"x": float(entry.get("x", 0.0)), "y": float(entry.get("y", 0.0)), "c": cidx, "a": ang, "t": t_ms})
 
 # Host → join-in-progress member: replay the persisted splotch canvas, chunked to stay
 # under the relay packet limit. Always sends at least one packet (first=true) so the joiner
@@ -350,7 +368,7 @@ func _build_player_panel() -> void:
 
 		# Ping label
 		var ping_lbl := Label.new()
-		ping_lbl.text = "--"
+		ping_lbl.text = "..."
 		ping_lbl.add_theme_font_size_override("font_size", 11)
 		ping_lbl.add_theme_color_override("font_color", Color(0.55, 0.55, 0.55))
 
@@ -366,8 +384,7 @@ func _build_player_panel() -> void:
 func _refresh_own_ping() -> void:
 	var our_ping: int = AppState.bc.relay_service.get_ping()
 	if _ping_labels.has(AppState.user_cx_id):
-		(_ping_labels[AppState.user_cx_id] as Label).text = \
-			("--" if our_ping < 0 else "%d ms" % our_ping)
+		(_ping_labels[AppState.user_cx_id] as Label).text = _fmt_ping(our_ping)
 
 # ── Cursor management ─────────────────────────────────────────────────────────
 
@@ -379,7 +396,7 @@ func _get_or_create_cursor(net_id: int) -> Node2D:
 	var cursor             = _CURSOR_SCENE.instantiate()
 	var pname:  String     = member.get("name", "Player %d" % net_id)
 	var extra:  Dictionary = member.get("extra", {})
-	var cidx:   int        = extra.get("colorIndex", net_id % AppState.color_palette.size())
+	var cidx:   int        = extra.get("colorIndex", net_id % maxi(1, AppState.color_palette.size()))
 	_game_area.add_child(cursor)  # must be before setup so @onready vars are valid
 	cursor.setup(net_id, pname, cidx)
 	_cursors[net_id] = cursor
