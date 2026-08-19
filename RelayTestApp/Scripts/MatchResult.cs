@@ -12,8 +12,9 @@ public class LeaderboardPeriodDelta
 }
 
 // Personal leaderboard-rank movement from posting this round's score, across all four boards.
-// Computed server-side (PostMatchResults cloud script, host-only) and broadcast to the rest
-// of the match via the "lb_result" relay op.
+// Computed server-side in one PostMatchResults cloud script call made by the host — see
+// Main.HostPostMatchResultsToCloud (host, applied directly from the script response) and
+// Main.TickMatchResultsPoll (everyone else, polled from the GlobalEntity that call writes).
 public class LeaderboardDelta
 {
 	public bool Ready; // true once this entry's delta has been computed (host) or received (others)

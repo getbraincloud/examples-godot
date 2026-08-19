@@ -28,10 +28,11 @@ public partial class MatchSummaryScreen : Control
 	private int _readyCount;
 	private int _totalCount;
 
-	// How long a player card waits for its "lb_result" leaderboard delta before giving up and
+	// How long a player card waits for its leaderboard delta (polled from the GlobalEntity
+	// PostMatchResults.js writes — see Main.TickMatchResultsPoll) before giving up and
 	// showing "Leaderboard unavailable" instead of "Updating leaderboards..." forever — the
-	// cloud script call/broadcast is best-effort, so this is the backstop that keeps this
-	// screen from looking permanently stuck when it's lost that race.
+	// cloud script call is best-effort, so this is the backstop that keeps this screen from
+	// looking permanently stuck if it never shows up.
 	private const long LeaderboardResultTimeoutMs = 8000;
 	private bool _leaderboardTimeoutHandled;
 

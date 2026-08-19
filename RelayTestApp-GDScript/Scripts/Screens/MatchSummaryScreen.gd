@@ -11,10 +11,11 @@ signal main_menu_requested
 
 const _REMATCH_MS := 45000
 
-# How long a player card waits for its "lb_result" leaderboard delta before giving up and
-# showing "Leaderboard unavailable" instead of "Updating leaderboards..." forever — the cloud
-# script call/broadcast is best-effort, so this is the backstop that keeps this screen from
-# looking permanently stuck when it's lost that race.
+# How long a player card waits for its leaderboard delta (polled from the GlobalEntity
+# PostMatchResults writes — see Main._tick_match_results_poll) before giving up and showing
+# "Leaderboard unavailable" instead of "Updating leaderboards..." forever — the cloud script
+# call is best-effort, so this is the backstop that keeps this screen from looking
+# permanently stuck if it never shows up.
 const _LEADERBOARD_RESULT_TIMEOUT_MS := 8000
 
 @onready var _lobby_info_label: Label         = %LobbyInfoLabel

@@ -130,8 +130,14 @@ public partial class Main : Node
 	private MatchResultData _matchResult = new();
 	private int _leaderboardPostedRound = -1;
 	private List<MatchResultEntry> _pendingMatchResult = new();
-	private readonly List<(string CxId, LeaderboardDelta Delta)> _pendingLbChunk = new();
-	private readonly Dictionary<string, LeaderboardDelta> _pendingLbResults = new();
+
+	// Non-host: throttle state for polling the GlobalEntity PostMatchResults.js writes
+	// (indexed by "<lobbyId>:<round>") instead of waiting on a host relay broadcast — see
+	// TickMatchResultsPoll(). Reset whenever a new round's matchResult shows up.
+	private int _resultsPollRound = -1;
+	private double _resultsPollAccum = 0;
+	private bool _resultsPollInFlight = false;
+	private const double ResultsPollIntervalSec = 1.0;
 
 	// Match Summary / rematch flow (BCLOUD-14489).
 	private bool _awaitingRematch = false;
@@ -234,6 +240,9 @@ public partial class Main : Node
 		// Host-only: keeps evaluating whether to auto-start the next round even while sitting
 		// on the Lobby (rather than the Match Summary screen).
 		if (_awaitingRematch) TickRematchGate();
+
+		// Non-host: keeps polling for the host's leaderboard results (see TickMatchResultsPoll).
+		if (_awaitingRematch) TickMatchResultsPoll(delta);
 	}
 
 	public override void _Notification(int what)
@@ -513,8 +522,9 @@ public partial class Main : Node
 		_coverageRecomputeAccum = 0;
 		_leaderboardPostedRound = -1;
 		_pendingMatchResult = new List<MatchResultEntry>();
-		_pendingLbChunk.Clear();
-		_pendingLbResults.Clear();
+		_resultsPollRound = -1;
+		_resultsPollAccum = 0;
+		_resultsPollInFlight = false;
 		_awaitingRematch = false;
 		_isProvisioning = false;
 
@@ -1281,9 +1291,6 @@ public partial class Main : Node
 			case "match_result":
 				HandleMatchResult((Dictionary<string, object>)message["data"]);
 				return;
-			case "lb_result":
-				HandleLbResult((Dictionary<string, object>)message["data"]);
-				return;
 		}
 
 		string memberCxID = _brainCloudWrapper.RelayService.GetCxIdForNetId(netId);
@@ -1870,7 +1877,7 @@ public partial class Main : Node
 
 	private static long NowMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-	// Mask of every OTHER lobby member (excludes self) — used to broadcast match_result/lb_result.
+	// Mask of every OTHER lobby member (excludes self) — used to broadcast match_result.
 	private ulong BuildAllOthersMask()
 	{
 		ulong mask = 0;
@@ -2046,73 +2053,16 @@ public partial class Main : Node
 		}
 	}
 
-	private void HandleLbResult(Dictionary<string, object> data)
-	{
-		int round = Convert.ToInt32(data["round"]);
-		// lb_result almost always arrives after match_result is already applied (it depends on an
-		// async cloud-script call), so a round guard here just drops it every time — that's why
-		// summary cards used to get stuck on "Updating leaderboards...". No guard needed; stale/
-		// duplicate chunks are already handled below via cxId matching.
-
-		bool first = data.ContainsKey("first") && Convert.ToBoolean(data["first"]);
-		if (first) _pendingLbChunk.Clear();
-
-		if (data.ContainsKey("e") && data["e"] is object[] entries)
-		{
-			foreach (var o in entries)
-			{
-				if (o is not Dictionary<string, object> entry) continue;
-				var delta = new LeaderboardDelta { Ready = true };
-
-				void ReadPeriod(string key, LeaderboardPeriodDelta target)
-				{
-					if (!entry.ContainsKey(key)) return; // absent == "no change" for that period
-					var j = (Dictionary<string, object>)entry[key];
-					target.Improved = true;
-					target.RankBefore = Convert.ToInt32(j["b"]);
-					target.RankAfter = Convert.ToInt32(j["a"]);
-				}
-				ReadPeriod("pl", delta.PointsLifetime);
-				ReadPeriod("pq", delta.PointsQuarterly);
-				ReadPeriod("cl", delta.CoverageLifetime);
-				ReadPeriod("cq", delta.CoverageQuarterly);
-				_pendingLbChunk.Add(((string)entry["cx"], delta));
-			}
-		}
-
-		bool last = data.ContainsKey("last") && Convert.ToBoolean(data["last"]);
-		if (last)
-		{
-			foreach (var (cxId, delta) in _pendingLbChunk)
-			{
-				var entry = _matchResult.Entries.Find(e => e.CxId == cxId);
-				if (entry != null) entry.LbDelta = delta;
-				else _pendingLbResults[cxId] = delta;
-			}
-			_pendingLbChunk.Clear();
-		}
-	}
-
 	/// <summary>
 	/// Applies an authoritative coverage snapshot for a round — either computed locally (host,
 	/// or the watchdog fallback) or reassembled from a "match_result" broadcast. Idempotent per
-	/// round. Only the host posts to the cloud; everyone else just waits for the "lb_result"
-	/// broadcast that produces.
+	/// round. Only the host posts to the cloud; everyone else picks the result up on their own
+	/// via TickMatchResultsPoll instead of waiting on the host to relay it.
 	/// </summary>
 	private void ApplyMatchResult(int round, List<MatchResultEntry> entries)
 	{
 		if (_matchResult.Valid && _matchResult.Round == round) return;
 		_matchResult = new MatchResultData { Valid = true, Round = round, Entries = entries };
-
-		// Drain any "lb_result" broadcasts that arrived before this round's match_result did.
-		foreach (var e in entries)
-		{
-			if (_pendingLbResults.TryGetValue(e.CxId, out var pending))
-			{
-				e.LbDelta = pending;
-				_pendingLbResults.Remove(e.CxId);
-			}
-		}
 
 		_matchSummaryScreen?.RefreshResults(_matchResult.Entries, _lobby, _userCxID, _userIsReady);
 
@@ -2153,6 +2103,7 @@ public partial class Main : Node
 		var payload = new Dictionary<string, object>
 		{
 			{ "round", round },
+			{ "lobbyId", _lobbyID }, // so the script can persist a "<lobbyId>:<round>"-indexed GlobalEntity for non-host clients to poll (see TickMatchResultsPoll)
 			{ "pointsLeaderboardId", pointsLeaderboardId },
 			{ "pointsLeaderboardIdQuarterly", pointsLeaderboardIdQuarterly },
 			{ "coverageLeaderboardId", coverageLeaderboardId },
@@ -2179,9 +2130,11 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Applies the PostMatchResults response (keyed by profileId) onto _matchResult.Entries
-	/// (keyed by cxId — resolved via lobby members) and broadcasts the result to the rest of
-	/// the match. Host-only.
+	/// Applies a PostMatchResults response (keyed by profileId) onto _matchResult.Entries
+	/// (keyed by cxId — resolved via lobby members). Called on the host directly from
+	/// HostPostMatchResultsToCloud's own script response, and on every other client from
+	/// TickMatchResultsPoll once the GlobalEntity that call writes shows up — both feed it
+	/// the exact same "results" array shape, so there's only one place that parses it.
 	/// </summary>
 	private void ApplyLeaderboardResultsFromCloud(int round, object[] resultsArr)
 	{
@@ -2225,63 +2178,59 @@ public partial class Main : Node
 		}
 
 		_matchSummaryScreen?.RefreshResults(_matchResult.Entries, _lobby, _userCxID, _userIsReady);
-
-		SendLeaderboardResultsToMask(BuildAllOthersMask(), round, _matchResult.Entries);
 	}
 
 	/// <summary>
-	/// Broadcasts the host's cloud-computed leaderboard results for the whole round to the
-	/// rest of the match — chunked exactly like match_result. Only entries with LbDelta.Ready
-	/// are included; a period sub-object is present only when it actually improved (absent ==
-	/// "no change" on receipt).
+	/// Non-host: polls the GlobalEntity PostMatchResults.js writes (indexed by
+	/// "&lt;lobbyId&gt;:&lt;round&gt;") until it shows up, instead of waiting on the host to relay its
+	/// own script response over the relay connection — a host that disconnects right after
+	/// posting (or mid-broadcast) used to leave everyone else stuck at the
+	/// LeaderboardResultTimeoutMs timeout even though the leaderboard post itself had already
+	/// succeeded. Safe to call every frame while _awaitingRematch: it no-ops until there's a
+	/// valid, not-yet-resolved matchResult for a non-host client, then self-throttles to
+	/// ResultsPollIntervalSec. Called from _Process.
 	/// </summary>
-	private void SendLeaderboardResultsToMask(ulong mask, int round, List<MatchResultEntry> entries)
+	private void TickMatchResultsPoll(double delta)
 	{
-		if (mask == 0) return;
+		if (!_matchResult.Valid) return;
 
-		const int maxBytes = 900;
-		const int envelope = 80;
-		var batches = new List<List<Dictionary<string, object>>>();
-		var batch = new List<Dictionary<string, object>>();
-		int currentSize = envelope;
+		bool isHost = IsEffectivelyHost();
+		if (isHost) return; // host already has its results from its own PostMatchResults call
 
-		void PutPeriod(Dictionary<string, object> je, string key, LeaderboardPeriodDelta pd)
+		if (_matchResult.Entries.Exists(e => e.LbDelta.Ready)) return; // already applied
+
+		if (_resultsPollRound != _matchResult.Round)
 		{
-			if (!pd.Improved) return;
-			je[key] = new Dictionary<string, object> { { "b", pd.RankBefore }, { "a", pd.RankAfter } };
+			_resultsPollRound = _matchResult.Round;
+			_resultsPollAccum = ResultsPollIntervalSec; // poll immediately on a fresh round
+			_resultsPollInFlight = false;
 		}
+		if (_resultsPollInFlight) return;
 
-		foreach (var e in entries)
-		{
-			if (!e.LbDelta.Ready) continue;
-			var je = new Dictionary<string, object> { { "cx", e.CxId } };
-			PutPeriod(je, "pl", e.LbDelta.PointsLifetime);
-			PutPeriod(je, "pq", e.LbDelta.PointsQuarterly);
-			PutPeriod(je, "cl", e.LbDelta.CoverageLifetime);
-			PutPeriod(je, "cq", e.LbDelta.CoverageQuarterly);
+		_resultsPollAccum += delta;
+		if (_resultsPollAccum < ResultsPollIntervalSec) return;
+		_resultsPollAccum = 0;
+		_resultsPollInFlight = true;
 
-			int entrySize = BrainCloud.JsonFx.Json.JsonWriter.Serialize(je).Length + 1;
-			if (currentSize + entrySize > maxBytes && batch.Count > 0)
+		int round = _matchResult.Round;
+		string indexedId = _lobbyID + ":" + round;
+		_brainCloudWrapper.GlobalEntityService.GetListByIndexedId(indexedId, 1,
+			(jsonResponse, cbObject) =>
 			{
-				batches.Add(batch);
-				batch = new List<Dictionary<string, object>>();
-				currentSize = envelope;
-			}
-			batch.Add(je);
-			currentSize += entrySize;
-		}
-		batches.Add(batch); // always at least one (possibly empty) so "last" still fires
-
-		for (int i = 0; i < batches.Count; i++)
-		{
-			var json = new Dictionary<string, object>
+				_resultsPollInFlight = false;
+				var response = BrainCloud.JsonFx.Json.JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+				var data = response.ContainsKey("data") ? response["data"] as Dictionary<string, object> : null;
+				var entityList = data != null && data.ContainsKey("entityList") ? data["entityList"] as object[] : null;
+				if (entityList == null || entityList.Length == 0) return; // not written yet — next tick retries
+				var entity = (Dictionary<string, object>)entityList[0];
+				var entityData = (Dictionary<string, object>)entity["data"];
+				var results = entityData["results"] as object[];
+				ApplyLeaderboardResultsFromCloud(round, results);
+			},
+			(status, reasonCode, jsonError, cbObject) =>
 			{
-				{ "op", "lb_result" },
-				{ "data", new Dictionary<string, object> { { "round", round }, { "first", i == 0 }, { "last", i == batches.Count - 1 }, { "e", batches[i].ToArray() } } }
-			};
-			byte[] bytes = Encoding.ASCII.GetBytes(BrainCloud.JsonFx.Json.JsonWriter.Serialize(json));
-			_brainCloudWrapper.RelayService.SendToPlayers(bytes, mask, true, true, BrainCloudRelay.CHANNEL_HIGH_PRIORITY_1);
-		}
+				_resultsPollInFlight = false; // next tick retries
+			});
 	}
 
 	/// <summary>

@@ -62,9 +62,7 @@ var _pending_match_result: Array = []
 
 func _ready() -> void:
 	# The relay data callback is registered once, centrally, by Main (see _on_relay_data
-	# there) and forwarded here — registering it per-screen meant a "lb_result" broadcast
-	# that lands right after END_MATCH swaps this screen out for Match Summary would
-	# silently go nowhere, since the callback pointed at an already-freed GameScreen.
+	# there) and forwarded here.
 
 	_move_timer.wait_time = _MOVE_INTERVAL
 	_move_timer.timeout.connect(_send_position)
@@ -84,7 +82,6 @@ func _ready() -> void:
 	AppState.match_result_round = -1
 	AppState.match_result_entries = []
 	AppState.leaderboard_posted_round = -1
-	AppState.pending_lb_results.clear()
 
 	_leave_btn.pressed.connect(_on_leave_game_pressed)
 
@@ -356,19 +353,13 @@ func _on_match_result_received(data: Dictionary) -> void:
 # Applies an authoritative coverage snapshot for a round — either locally-computed (host, or
 # the watchdog fallback) or reassembled from a "match_result" broadcast. Idempotent per round.
 # Only the host posts to the cloud (via Main, so the response survives this screen being
-# freed on END_MATCH) — everyone else just waits for the "lb_result" broadcast that produces.
+# freed on END_MATCH) — everyone else picks the result up on their own via
+# Main._tick_match_results_poll instead of waiting on the host to relay it.
 func _apply_match_result(round: int, entries: Array) -> void:
 	if AppState.match_result_round == round:
 		return
 	AppState.match_result_round = round
 	AppState.match_result_entries = entries
-
-	# Drain any "lb_result" broadcasts that arrived before this round's match_result did.
-	for e: Dictionary in entries:
-		var cx: String = e["cx_id"]
-		if AppState.pending_lb_results.has(cx):
-			e["lb_delta"] = AppState.pending_lb_results[cx]
-			AppState.pending_lb_results.erase(cx)
 
 	if AppState.leaderboard_posted_round == round:
 		return
@@ -387,11 +378,8 @@ func apply_fallback_if_missing() -> void:
 		var fresh: Array = Coverage.compute(_splotch_records, _coverage_members())
 		_apply_match_result(_round_number, _to_match_result_entries(fresh))
 
-# "lb_result" is received in Main now (see _on_relay_data / _on_lb_result_received there),
-# not here — it needs to keep working after this screen's been torn down for Match Summary.
-
-# Shared chunker for match_result/lb_result — always sends at least one packet so "last"
-# always fires, even for an empty entries array (lb_result may legitimately have none).
+# Shared chunker for match_result — always sends at least one packet so "last" always fires,
+# even for an empty entries array.
 func _chunk_and_send(op: String, round: int, entries: Array, require_non_empty: bool) -> void:
 	if require_non_empty and entries.is_empty():
 		return

@@ -58,7 +58,6 @@ var round_number: int = 0
 var match_result_round: int = -1
 var match_result_entries: Array = []
 var leaderboard_posted_round: int = -1
-var pending_lb_results: Dictionary = {}  # cx_id -> lb_delta, for lb_result arriving before match_result
 
 # Default 40-colour palette, matching the js/dotnet/C#-Godot CursorParty clients. Gets
 # overwritten at runtime from the "Colors" global property — seeding it here just means we

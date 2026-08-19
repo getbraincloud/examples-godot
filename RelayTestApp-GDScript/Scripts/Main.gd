@@ -26,8 +26,15 @@ signal _async_done(result: Dictionary)
 # before it's needed) and matchmaking also awaits it — whichever gets there first actually
 # calls enable_rtt; later callers just wait on _rtt_ready.
 var _rtt_enabling: bool = false
-var _pending_lb_chunk: Array = []
 signal _rtt_ready(result: Dictionary)
+
+# Non-host: throttle state for polling the GlobalEntity PostMatchResults.js writes (indexed
+# by "<lobbyId>:<round>") instead of waiting on a host relay broadcast — see
+# _tick_match_results_poll(). Reset whenever a new round's match result shows up.
+var _results_poll_round: int = -1
+var _results_poll_accum: float = 0.0
+var _results_poll_in_flight: bool = false
+const _RESULTS_POLL_INTERVAL_SEC := 1.0
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -70,7 +77,9 @@ func _bc_setting(key: String, fallback: String) -> String:
 
 # ── Tick ──────────────────────────────────────────────────────────────────────
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_tick_match_results_poll(delta)
+
 	if _lobby_search_start <= 0 or not _in_lobby_search_step:
 		return
 	var elapsed := int((Time.get_ticks_msec() - _lobby_search_start) / 1000)
@@ -576,55 +585,14 @@ func _on_relay_system(msg: Dictionary) -> void:
 			if _current_screen and _current_screen.has_method("on_relay_system"):
 				_current_screen.on_relay_system(op, msg)
 
-# Registered as the single relay data callback (see _connectToRelay above) instead of letting
-# GameScreen register its own — a "lb_result" broadcast can legitimately land after END_MATCH
-# has already swapped GameScreen out for Match Summary, and a callback bound to a freed
-# screen would silently drop it. "lb_result" is handled right here so it survives that
-# transition; everything else (gameplay ops) still just forwards to whichever screen is current.
+# Registered as the single relay data callback (see _connectToRelay above) so every gameplay
+# op forwards to whichever screen is current.
 func _on_relay_data(net_id: int, raw: PackedByteArray) -> void:
 	var msg = JSON.parse_string(raw.get_string_from_utf8())
 	if not msg is Dictionary:
 		return
-	if msg.get("op", "") == "lb_result":
-		_on_lb_result_received(msg.get("data", {}))
-		return
 	if _current_screen and _current_screen.has_method("on_relay_message"):
 		_current_screen.on_relay_message(net_id, raw)
-
-func _on_lb_result_received(data: Dictionary) -> void:
-	if data.get("first", false):
-		_pending_lb_chunk = []
-	for e: Dictionary in data.get("e", []):
-		var delta := {
-			"ready": true,
-			"points_lifetime":   _read_period_wire(e, "pl"),
-			"points_quarterly":  _read_period_wire(e, "pq"),
-			"coverage_lifetime": _read_period_wire(e, "cl"),
-			"coverage_quarterly": _read_period_wire(e, "cq"),
-		}
-		_pending_lb_chunk.append({"cx_id": e.get("cx", ""), "delta": delta})
-	if not data.get("last", false):
-		return
-
-	for item: Dictionary in _pending_lb_chunk:
-		var found := false
-		for entry: Dictionary in AppState.match_result_entries:
-			if entry["cx_id"] == item["cx_id"]:
-				entry["lb_delta"] = item["delta"]
-				found = true
-				break
-		if not found:
-			AppState.pending_lb_results[item["cx_id"]] = item["delta"]
-	_pending_lb_chunk = []
-
-	if _current_screen and _current_screen.has_method("refresh_results"):
-		_current_screen.refresh_results(AppState.match_result_entries, AppState.lobby_members, AppState.user_cx_id)
-
-static func _read_period_wire(e: Dictionary, key: String) -> Dictionary:
-	if not e.has(key):
-		return {"improved": false, "rank_before": -1, "rank_after": -1}
-	var j: Dictionary = e[key]
-	return {"improved": true, "rank_before": int(j.get("b", -1)), "rank_after": int(j.get("a", -1))}
 
 func _on_host_end_match() -> void:
 	# Only the host sends the SDK endMatch packet (opcode CL2RS_ENDMATCH=6).
@@ -733,6 +701,7 @@ func _host_post_match_results_to_cloud(round: int, entries: Array) -> void:
 
 	var payload := {
 		"round": round,
+		"lobbyId": AppState.lobby_id, # so the script can persist a "<lobbyId>:<round>"-indexed GlobalEntity for non-host clients to poll (see _tick_match_results_poll)
 		"pointsLeaderboardId": AppState.points_leaderboard_id,
 		"pointsLeaderboardIdQuarterly": AppState.points_leaderboard_id_quarterly,
 		"coverageLeaderboardId": AppState.coverage_leaderboard_id,
@@ -748,9 +717,12 @@ func _host_post_match_results_to_cloud(round: int, entries: Array) -> void:
 	# runTimeData/success), not data itself — data.results is always empty/missing.
 	_apply_leaderboard_results_from_cloud(round, result.get("data", {}).get("response", {}).get("results", []))
 
-# Applies the PostMatchResults response (keyed by profileId) onto AppState.match_result_entries
-# (keyed by cxId — resolved via lobby members), refreshes the Match Summary screen if it's the
-# one currently showing, and broadcasts the result to the rest of the match. Host-only.
+# Applies a PostMatchResults response (keyed by profileId) onto AppState.match_result_entries
+# (keyed by cxId — resolved via lobby members) and refreshes the Match Summary screen if it's
+# the one currently showing. Called on the host directly from _host_post_match_results_to_cloud's
+# own script response, and on every other client from _tick_match_results_poll once the
+# GlobalEntity that call writes shows up — both feed it the exact same "results" array shape,
+# so there's only one place that parses it.
 func _apply_leaderboard_results_from_cloud(round: int, results: Array) -> void:
 	if AppState.match_result_round != round: # a newer round has already started
 		return
@@ -783,8 +755,6 @@ func _apply_leaderboard_results_from_cloud(round: int, results: Array) -> void:
 	if _current_screen and _current_screen.has_method("refresh_results"):
 		_current_screen.refresh_results(AppState.match_result_entries, AppState.lobby_members, AppState.user_cx_id)
 
-	_send_leaderboard_results(round, AppState.match_result_entries)
-
 static func _read_leaderboard_period(j: Dictionary) -> Dictionary:
 	return {
 		"improved": bool(j.get("improved", false)),
@@ -792,52 +762,47 @@ static func _read_leaderboard_period(j: Dictionary) -> Dictionary:
 		"rank_after": int(j.get("after", -1)),
 	}
 
-# Broadcasts the host's cloud-computed leaderboard results for the whole round to the rest of
-# the match, chunked exactly like match_result. Only sent while still relay-connected — a slow
-# cloud-script response can land after everyone's already disconnected, so it's best-effort in
-# that case, same as C#/cpp/react. Only entries with lb_delta.ready are included, and a period
-# sub-object only shows up when it actually improved (absent means "no change" on receipt).
-func _send_leaderboard_results(round: int, entries: Array) -> void:
-	if not AppState.bc.relay_service.relay_is_connected():
+# Non-host: polls the GlobalEntity PostMatchResults.js writes (indexed by "<lobbyId>:<round>")
+# until it shows up, instead of waiting on the host to relay its own script response over the
+# relay connection — which is usually already torn down by the time results would arrive
+# (_teardown_relay runs as soon as we reach Match Summary), so the old "lb_result" broadcast
+# could only ever land in a narrow window. Called from _process every frame; no-ops until
+# there's a valid, not-yet-resolved match result for a non-host client, then self-throttles to
+# _RESULTS_POLL_INTERVAL_SEC.
+func _tick_match_results_poll(delta: float) -> void:
+	if AppState.match_result_round < 0 or AppState.match_result_entries.is_empty():
+		return
+	if AppState.user_cx_id == AppState.lobby_owner_cx_id:
+		return # host already has its results from its own PostMatchResults call
+
+	for e: Dictionary in AppState.match_result_entries:
+		if e.get("lb_delta", {}).get("ready", false):
+			return # already applied
+
+	if _results_poll_round != AppState.match_result_round:
+		_results_poll_round = AppState.match_result_round
+		_results_poll_accum = _RESULTS_POLL_INTERVAL_SEC # poll immediately on a fresh round
+		_results_poll_in_flight = false
+	if _results_poll_in_flight:
 		return
 
-	var out_entries: Array = []
-	for e: Dictionary in entries:
-		var delta: Dictionary = e.get("lb_delta", {})
-		if not delta.get("ready", false):
-			continue
-		var je := {"cx": e["cx_id"]}
-		_put_leaderboard_period(je, "pl", delta.get("points_lifetime", {}))
-		_put_leaderboard_period(je, "pq", delta.get("points_quarterly", {}))
-		_put_leaderboard_period(je, "cl", delta.get("coverage_lifetime", {}))
-		_put_leaderboard_period(je, "cq", delta.get("coverage_quarterly", {}))
-		out_entries.append(je)
-
-	const MAX_BYTES := 900
-	var batches: Array = []
-	var batch: Array = []
-	for entry: Dictionary in out_entries:
-		batch.append(entry)
-		var candidate: PackedByteArray = JSON.stringify(
-			{"op": "lb_result", "data": {"round": round, "first": batches.is_empty(), "last": true, "e": batch}}
-		).to_utf8_buffer()
-		if candidate.size() > MAX_BYTES and batch.size() > 1:
-			batch.pop_back()
-			batches.append(batch)
-			batch = [entry]
-	batches.append(batch) # always at least one (possibly empty) so "last" still fires
-
-	for i in batches.size():
-		var packet: PackedByteArray = JSON.stringify({
-			"op": "lb_result",
-			"data": {"round": round, "first": i == 0, "last": i == batches.size() - 1, "e": batches[i]}
-		}).to_utf8_buffer()
-		AppState.bc.relay_service.send(packet, BrainCloudRelay.TO_ALL_PLAYERS, true, true, BrainCloudRelay.CHANNEL_HIGH_PRIORITY_1)
-
-static func _put_leaderboard_period(je: Dictionary, key: String, pd: Dictionary) -> void:
-	if not pd.get("improved", false):
+	_results_poll_accum += delta
+	if _results_poll_accum < _RESULTS_POLL_INTERVAL_SEC:
 		return
-	je[key] = {"b": pd.get("rank_before", -1), "a": pd.get("rank_after", -1)}
+	_results_poll_accum = 0.0
+	_results_poll_in_flight = true
+
+	var round: int = AppState.match_result_round
+	var indexed_id: String = AppState.lobby_id + ":" + str(round)
+	var result: Dictionary = await AppState.bc.global_entity_service.get_list_by_indexed_id("matchResults", indexed_id, 1)
+	_results_poll_in_flight = false
+	if result.get("status", 0) != 200:
+		return # next tick retries
+	var entity_list: Array = result.get("data", {}).get("entityList", [])
+	if entity_list.is_empty():
+		return # not written yet — next tick retries
+	var results: Array = entity_list[0].get("data", {}).get("results", [])
+	_apply_leaderboard_results_from_cloud(round, results)
 
 # ── Rematch flow ───────────────────────────────────────────────────────────────
 
