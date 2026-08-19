@@ -2,6 +2,8 @@
 extends Control
 
 signal leave_lobby
+signal lobby_signal_send_requested(text: String)
+signal global_chat_send_requested(text: String)
 
 const _MEMBER_SCENE := preload("res://Scenes/Screens/LobbyMember.tscn")
 
@@ -16,18 +18,46 @@ const _SWATCH_SIZE  := 28
 @onready var _status_label:      Label         = %StatusLabel
 @onready var _timer_label:       Label         = %TimerLabel
 @onready var _member_list:       VBoxContainer = %MemberList
-@onready var _color_grid:        GridContainer = %ColorGrid
+@onready var _color_popup:       PopupPanel    = %ColorPopup
+@onready var _color_popup_grid:  GridContainer = %ColorPopupGrid
 @onready var _ready_button:      Button        = %ReadyButton
 @onready var _leave_button:      Button        = %LeaveButton
+@onready var _lobby_chat_panel:  LobbySignalChatPanel = %LobbySignalChatPanel
 
-var _is_ready:      bool   = false
+# Right-side tabs: Chat / Leaderboards / Info (each panel is always instanced, only the
+# selected one is visible — avoids the overlap that showing all three simultaneously caused).
+@onready var _chat_tab_btn:        Button        = %ChatTabBtn
+@onready var _leaderboards_tab_btn: Button       = %LeaderboardsTabBtn
+@onready var _info_tab_btn:        Button        = %InfoTabBtn
+@onready var _chat_tab:            Control       = %ChatTab
+@onready var _leaderboards_tab:    Control       = %LeaderboardsTab
+@onready var _info_tab:            Control       = %InfoTab
+
+# Chat sub-tabs: This Lobby / Global.
+@onready var _this_lobby_tab_btn: Button  = %ThisLobbyTabBtn
+@onready var _global_tab_btn:     Button  = %GlobalTabBtn
+@onready var _global_chat_panel:  GlobalChatPanel = %GlobalChatPanel
+
 var _elapsed:       float  = 0.0
 var _server_status: String = ""   # non-empty overrides the default status text
 
 func _ready() -> void:
-	_build_color_grid()
+	_build_color_popup()
 	_ready_button.pressed.connect(_on_ready_pressed)
 	_leave_button.pressed.connect(_on_leave_pressed)
+	_lobby_chat_panel.send_requested.connect(func(text): lobby_signal_send_requested.emit(text))
+	set_lobby_chat_history(AppState.lobby_chat_history)
+
+	_global_chat_panel.send_requested.connect(func(text): global_chat_send_requested.emit(text))
+	_global_chat_panel.set_history(AppState.global_chat_history)
+
+	_chat_tab_btn.pressed.connect(func(): _set_right_tab("chat"))
+	_leaderboards_tab_btn.pressed.connect(func(): _set_right_tab("leaderboards"))
+	_info_tab_btn.pressed.connect(func(): _set_right_tab("info"))
+	_this_lobby_tab_btn.pressed.connect(func(): _set_chat_sub_tab("this_lobby"))
+	_global_tab_btn.pressed.connect(func(): _set_chat_sub_tab("global"))
+	_set_right_tab("chat")
+	_set_chat_sub_tab("this_lobby")
 
 	for m: Dictionary in AppState.lobby_members:
 		_add_member_row(m)
@@ -35,9 +65,49 @@ func _ready() -> void:
 	_refresh_info()
 	_apply_role()
 
+func _set_right_tab(tab: String) -> void:
+	_chat_tab.visible = tab == "chat"
+	_leaderboards_tab.visible = tab == "leaderboards"
+	_info_tab.visible = tab == "info"
+	_chat_tab_btn.modulate = Color(1.4, 1.4, 1.4) if tab == "chat" else Color.WHITE
+	_leaderboards_tab_btn.modulate = Color(1.4, 1.4, 1.4) if tab == "leaderboards" else Color.WHITE
+	_info_tab_btn.modulate = Color(1.4, 1.4, 1.4) if tab == "info" else Color.WHITE
+
+func _set_chat_sub_tab(tab: String) -> void:
+	_lobby_chat_panel.visible = tab == "this_lobby"
+	_global_chat_panel.visible = tab == "global"
+	_this_lobby_tab_btn.modulate = Color(1.4, 1.4, 1.4) if tab == "this_lobby" else Color.WHITE
+	_global_tab_btn.modulate = Color(1.4, 1.4, 1.4) if tab == "global" else Color.WHITE
+
+# Called once by Main right after this screen is created, to replay any this-lobby chat
+# history that was sent before this screen instance existed (e.g. from a prior round).
+func set_lobby_chat_history(history: Array) -> void:
+	_lobby_chat_panel.clear()
+	for row: Dictionary in history:
+		_lobby_chat_panel.add_message(row.get("from", "Player"), row.get("text", ""), row.get("is_me", false))
+
+func add_lobby_chat_message(from_name: String, text: String, is_me: bool) -> void:
+	_lobby_chat_panel.add_message(from_name, text, is_me)
+
+func add_global_chat_message(msg_id: String, from_name: String, text: String) -> void:
+	_global_chat_panel.add_message(msg_id, from_name, text)
+
+func update_global_chat_message(msg_id: String, text: String) -> void:
+	_global_chat_panel.update_message(msg_id, text)
+
+func remove_global_chat_message(msg_id: String) -> void:
+	_global_chat_panel.remove_message(msg_id)
+
+# Non-blocking status override shown inline (used while a round is being provisioned —
+# STARTING -> ROOM_READY -> relay connect — the rest of this screen, including chat, stays
+# fully usable underneath it instead of being replaced by a blocking loading screen).
+func set_status_override(text: String) -> void:
+	_server_status = text
+	_refresh_info()
+
 func _apply_role() -> void:
-	# Guard: owner is unknown until the first MEMBER_JOIN carries the lobby object.
-	# If both strings are empty the comparison would incorrectly return true.
+	# Owner is unknown until the first MEMBER_JOIN carries the lobby object — guard against
+	# both strings being empty, which would otherwise compare equal.
 	var owner_known := not AppState.lobby_owner_cx_id.is_empty()
 	var is_owner    := owner_known and AppState.user_cx_id == AppState.lobby_owner_cx_id
 	if is_owner:
@@ -45,8 +115,8 @@ func _apply_role() -> void:
 		_ready_button.disabled = false
 	elif owner_known:
 		# Non-host auto-readies immediately so the host can start without waiting
-		if not _is_ready:
-			_is_ready = true
+		if not AppState.user_is_ready:
+			AppState.user_is_ready = true
 			AppState.bc.lobby_service.update_ready(
 				AppState.lobby_id, true,
 				{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
@@ -59,12 +129,15 @@ func _process(delta: float) -> void:
 	_elapsed += delta
 	var mins := int(_elapsed) / 60
 	var secs := int(_elapsed) % 60
-	_timer_label.text = "%02d:%02d" % [mins, secs]
+	_timer_label.text = "Time in lobby: %02d:%02d" % [mins, secs]
 
 # ── Color picker ──────────────────────────────────────────────────────────────
+# A small popup under your own row's swatch (cpp: ImGui popup opened from your row's
+# ColorButton; react: colorPickerOpen toggled from your row, canPickColor = isMe) — not an
+# always-visible palette grid.
 
-func _build_color_grid() -> void:
-	_color_grid.columns = _COLS
+func _build_color_popup() -> void:
+	_color_popup_grid.columns = _COLS
 	var palette := AppState.color_palette
 	if palette.is_empty():
 		palette = AppState.default_palette()
@@ -81,26 +154,37 @@ func _build_color_grid() -> void:
 		btn.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		var idx := i
 		wrapper.pressed.connect(func(): _on_color_selected(idx))
-		_color_grid.add_child(wrapper)
+		_color_popup_grid.add_child(wrapper)
 
 	_highlight_selected()
 
 func _highlight_selected() -> void:
-	for i in _color_grid.get_child_count():
-		var w := _color_grid.get_child(i) as Button
+	for i in _color_popup_grid.get_child_count():
+		var w := _color_popup_grid.get_child(i) as Button
 		if w:
 			w.modulate = Color(1.6, 1.6, 1.6) if i == AppState.my_color_index else Color.WHITE
+
+# Called by a member row's color_swatch_clicked signal (own row only — LobbyMember gates this).
+func _on_color_swatch_clicked(row: Control) -> void:
+	var pos := row.get_global_rect().position + Vector2(0, row.get_global_rect().size.y)
+	_color_popup.position = Vector2i(pos)
+	_color_popup.popup()
 
 func _on_color_selected(index: int) -> void:
 	AppState.my_color_index = index
 	_highlight_selected()
+	_color_popup.hide()
+
+	# Instant local feedback — the server echo (MEMBER_UPDATE) will confirm shortly after.
+	_update_member_row({"cxId": AppState.user_cx_id, "name": AppState.username, "isReady": AppState.user_is_ready,
+		"extra": {"colorIndex": index, "pings": AppState.ping_data}})
 
 	var cfg := ConfigFile.new()
 	cfg.load("user://settings.cfg")
 	cfg.set_value("prefs", "color_index", index)
 	cfg.save("user://settings.cfg")
 	AppState.bc.lobby_service.update_ready(
-		AppState.lobby_id, _is_ready,
+		AppState.lobby_id, AppState.user_is_ready,
 		{"colorIndex": index, "pings": AppState.ping_data}
 	)
 
@@ -118,10 +202,10 @@ func _on_ready_pressed() -> void:
 			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
 		)
 	else:
-		_is_ready = not _is_ready
-		_ready_button.text = "Not Ready" if _is_ready else "Ready"
+		AppState.user_is_ready = not AppState.user_is_ready
+		_ready_button.text = "Not Ready" if AppState.user_is_ready else "Ready"
 		AppState.bc.lobby_service.update_ready(
-			AppState.lobby_id, _is_ready,
+			AppState.lobby_id, AppState.user_is_ready,
 			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
 		)
 
@@ -153,6 +237,12 @@ func on_lobby_event(op: String, data: Dictionary) -> void:
 		"ROOM_ASSIGNED":
 			_server_status = "Server assigned — waiting for relay..."
 			_ready_button.disabled = true
+		"ROOM_PROGRESS":
+			var cur_step: int = int(data.get("curStep", 0))
+			var of_step: int = int(data.get("ofStep", 0))
+			var msg: String = str(data.get("msg", ""))
+			_server_status = ("%d/%d: %s" % [cur_step, of_step, msg]) if cur_step > 0 else msg
+			_ready_button.disabled = true
 		"ROOM_READY":
 			_server_status = "Connecting to server..."
 			_ready_button.disabled = true
@@ -164,6 +254,7 @@ func _add_member_row(member: Dictionary) -> void:
 	var row := _MEMBER_SCENE.instantiate() as HBoxContainer
 	_member_list.add_child(row)  # must be before setup so @onready vars are valid
 	row.setup(member)
+	row.color_swatch_clicked.connect(func(): _on_color_swatch_clicked(row))
 	_refresh_info()
 
 func _remove_member_row(cx: String) -> void:

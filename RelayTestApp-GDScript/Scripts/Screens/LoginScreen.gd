@@ -55,7 +55,9 @@ func _on_login_pressed() -> void:
 func _load_global_properties() -> void:
 	_status_label.text = "Loading app data..."
 	var response: Dictionary = await AppState.bc.global_app_service.read_selected_properties(
-		["Colours", "AllLobbyTypes", "SplotchDuration"]
+		["Colours", "AllLobbyTypes", "SplotchDuration",
+		 "PointsLeaderboardId", "PointsLeaderboardIdQuarterly",
+		 "CoverageLeaderboardId", "CoverageLeaderboardIdQuarterly"]
 	)
 	if response.get("status", 0) != 200:
 		return
@@ -90,8 +92,32 @@ func _load_global_properties() -> void:
 	if AppState.lobby_types.is_empty():
 		AppState.lobby_types.append("CursorPartyv2")
 
+	# ?lobbyType= URL override takes priority over the saved pref, matched
+	# case-insensitively against the server's lobby types (see AppState.get_url_lobby_type).
+	var url_lobby_type := AppState.get_url_lobby_type()
+	if not url_lobby_type.is_empty():
+		for t: String in AppState.lobby_types:
+			if t.to_lower() == url_lobby_type.to_lower():
+				AppState.selected_lobby_type = t
+				break
+
 	# SplotchDuration — integer seconds (-1 = forever)
 	AppState.splotch_duration = int(data.get("SplotchDuration", {}).get("value", "-1"))
+
+	# Leaderboard ids — optional global properties, so the boards can be created/renamed in
+	# the portal with no client rebuild. Falls back to AppState's compiled-in defaults
+	# (matching cpp) when a property is absent. Without this override, a host running this
+	# client would post match results to the wrong/stale leaderboard id whenever the portal
+	# config differs from the compiled-in default, silently failing the PostMatchResults
+	# script call for the whole match (every client's summary screen shows "Leaderboard
+	# unavailable", not just this one's).
+	var read_leaderboard_id := func(prop_name: String, current: String) -> String:
+		var v: String = str(data.get(prop_name, {}).get("value", ""))
+		return v if v != "" else current
+	AppState.points_leaderboard_id = read_leaderboard_id.call("PointsLeaderboardId", AppState.points_leaderboard_id)
+	AppState.points_leaderboard_id_quarterly = read_leaderboard_id.call("PointsLeaderboardIdQuarterly", AppState.points_leaderboard_id_quarterly)
+	AppState.coverage_leaderboard_id = read_leaderboard_id.call("CoverageLeaderboardId", AppState.coverage_leaderboard_id)
+	AppState.coverage_leaderboard_id_quarterly = read_leaderboard_id.call("CoverageLeaderboardIdQuarterly", AppState.coverage_leaderboard_id_quarterly)
 
 # Drive the server-side playerName from login — mirrors the CPP RelayTestApp
 # (app.cpp handlePlayerState/submitName). The lobby member "name" (rendered on

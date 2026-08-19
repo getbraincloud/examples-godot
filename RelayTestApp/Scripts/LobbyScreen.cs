@@ -1,3 +1,4 @@
+using BrainCloud;
 using Godot;
 using System.Collections.Generic;
 using System;
@@ -12,9 +13,16 @@ public partial class LobbyScreen : Control
     public delegate void JoinMatchRequestedEventHandler();
     [Signal]
     public delegate void StartMatchRequestedEventHandler();
+    [Signal]
+    public delegate void ReadyToggleRequestedEventHandler();
+    [Signal]
+    public delegate void LobbySignalSendRequestedEventHandler(string text);
 
-    // Holds the dynamically built colour-swatch buttons (one per palette entry).
+    // Holds the dynamically built colour-swatch buttons (one per palette entry) — shown in a
+    // popup anchored to your own member row (cpp: ImGui popup from your row; react:
+    // colorPickerOpen toggled from your row), not an always-visible grid.
     private GridContainer _colourButtons;
+    private PopupPanel _colourPopup;
 
     // Lobby id + region + player-count header, shown above the colour grid (matches GDScript).
     private Label _lobbyInfoLabel;
@@ -39,19 +47,66 @@ public partial class LobbyScreen : Control
     // Start a match (visible ONLY to host / lobby owner)
     private Button _startButton;
 
+    // Ready-up toggle (visible ONLY to non-host members — only the host has a "Start"
+    // button, but everyone else still needs a way to signal they're ready before the
+    // host starts).
+    private Button _readyButton;
+
+    // This-lobby chat, global chat, and the leaderboard viewer — tabbed (CHAT/LEADERBOARDS/
+    // INFO), only one visible at a time; showing all three simultaneously is what caused them
+    // to visually overlap. Chat itself has a THIS LOBBY/GLOBAL sub-tab.
+    private VBoxContainer _chatTab;
+    private VBoxContainer _leaderboardsTab;
+    private VBoxContainer _infoTab;
+    private Button _chatTabBtn;
+    private Button _leaderboardsTabBtn;
+    private Button _infoTabBtn;
+    private Button _thisLobbyTabBtn;
+    private Button _globalTabBtn;
+    private LobbySignalChatPanel _lobbySignalChatPanel;
+    private GlobalChatPanel _globalChatPanel;
+    private LeaderboardPanel _leaderboardPanel;
+
+    // Small non-blocking status line shown while a round is being provisioned (STARTING ->
+    // ROOM_READY) — the rest of this screen (chat, member list, etc.) stays fully usable
+    // underneath it instead of being replaced by a blocking loading screen.
+    private Label _provisioningBanner;
+
     public override void _Ready()
     {
-        _colourButtons = GetNode<GridContainer>("VBoxContainer/ColourButtons");
-        _lobbyMembersContainer = GetNode<VBoxContainer>("VBoxContainer/LobbyMembersContainer");
-        _pingDataContainer = GetNode<VBoxContainer>("VBoxContainer/PingDataContainer");
-        _leaveButton = GetNode<Button>("VBoxContainer/LobbyButtons/LeaveButton");
-        _joinButton = GetNode<Button>("VBoxContainer/LobbyButtons/JoinButton");
-        _startButton = GetNode<Button>("VBoxContainer/LobbyButtons/StartButton");
+        const string leftCard = "CenterContainer/HBoxContainer/LeftCard/VBoxContainer";
+        const string rightCard = "CenterContainer/HBoxContainer/RightPanel/RightCard";
+        const string rightPanel = "CenterContainer/HBoxContainer/RightPanel";
+
+        _colourButtons = GetNode<GridContainer>("ColorPopup/ColourButtons");
+        _colourPopup = GetNode<PopupPanel>("ColorPopup");
+        _lobbyMembersContainer = GetNode<VBoxContainer>($"{leftCard}/MembersScroll/LobbyMembersContainer");
+        _leaveButton = GetNode<Button>($"{leftCard}/LobbyButtons/LeaveButton");
+        _joinButton = GetNode<Button>($"{leftCard}/LobbyButtons/ActionButtons/JoinButton");
+        _startButton = GetNode<Button>($"{leftCard}/LobbyButtons/ActionButtons/StartButton");
+        _readyButton = GetNode<Button>($"{leftCard}/LobbyButtons/ActionButtons/ReadyButton");
+        _chatTab = GetNode<VBoxContainer>($"{rightCard}/ChatTab");
+        _leaderboardsTab = GetNode<VBoxContainer>($"{rightCard}/LeaderboardsTab");
+        _infoTab = GetNode<VBoxContainer>($"{rightCard}/InfoTab");
+        _pingDataContainer = GetNode<VBoxContainer>($"{rightCard}/InfoTab/PingDataContainer");
+        _chatTabBtn = GetNode<Button>($"{rightPanel}/TabRow/ChatTabBtn");
+        _leaderboardsTabBtn = GetNode<Button>($"{rightPanel}/TabRow/LeaderboardsTabBtn");
+        _infoTabBtn = GetNode<Button>($"{rightPanel}/TabRow/InfoTabBtn");
+        _thisLobbyTabBtn = GetNode<Button>($"{rightCard}/ChatTab/SubTabRow/ThisLobbyTabBtn");
+        _globalTabBtn = GetNode<Button>($"{rightCard}/ChatTab/SubTabRow/GlobalTabBtn");
 
         // Connect Button listener(s)
         _leaveButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLeaveButtonPressed));
         _joinButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnJoinButtonPressed));
         _startButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnStartButtonPressed));
+        _readyButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnReadyButtonPressed));
+        _chatTabBtn.Connect(Button.SignalName.Pressed, Callable.From(() => SetRightTab("chat")));
+        _leaderboardsTabBtn.Connect(Button.SignalName.Pressed, Callable.From(() => SetRightTab("leaderboards")));
+        _infoTabBtn.Connect(Button.SignalName.Pressed, Callable.From(() => SetRightTab("info")));
+        _thisLobbyTabBtn.Connect(Button.SignalName.Pressed, Callable.From(() => SetChatSubTab("thisLobby")));
+        _globalTabBtn.Connect(Button.SignalName.Pressed, Callable.From(() => SetChatSubTab("global")));
+        SetRightTab("chat");
+        SetChatSubTab("thisLobby");
 
         // Build one swatch per palette colour (matches the dotnet/java/react 4×10 grid).
         BuildColourButtons();
@@ -59,14 +114,31 @@ public partial class LobbyScreen : Control
         // Hide buttons when not necessary
         _joinButton.Hide();
         _startButton.Hide();
+        _readyButton.Hide();
 
         // Lobby id / region / player-count header, prepended above the colour grid so the
         // C# lobby shows the same context info as the GDScript client.
         _lobbyInfoLabel = new Label();
         _lobbyInfoLabel.AddThemeFontSizeOverride("font_size", 14);
-        var vbox = GetNode<VBoxContainer>("VBoxContainer");
+        var vbox = GetNode<VBoxContainer>(leftCard);
         vbox.AddChild(_lobbyInfoLabel);
         vbox.MoveChild(_lobbyInfoLabel, 0);
+
+        _provisioningBanner = new Label();
+        _provisioningBanner.AddThemeFontSizeOverride("font_size", 13);
+        _provisioningBanner.AddThemeColorOverride("font_color", new Color(1f, 0.85f, 0.4f));
+        _provisioningBanner.Hide();
+        vbox.AddChild(_provisioningBanner);
+        vbox.MoveChild(_provisioningBanner, 0);
+    }
+
+    /// <summary>
+    /// Show/hide the non-blocking "starting the next round" status line.
+    /// </summary>
+    public void SetProvisioning(bool isProvisioning, string status)
+    {
+        _provisioningBanner.Text = "Starting round... " + status;
+        _provisioningBanner.Visible = isProvisioning;
     }
 
     /// <summary>
@@ -127,6 +199,15 @@ public partial class LobbyScreen : Control
     public void ToggleStartButtonVisibility(bool userIsHost)
     {
         _startButton.Visible = userIsHost;
+        _readyButton.Visible = !userIsHost;
+    }
+
+    /// <summary>
+    /// Updates the ready-toggle button's label to reflect this user's current ready state.
+    /// </summary>
+    public void SetReadyButtonState(bool isReady)
+    {
+        _readyButton.Text = isReady ? "NOT READY" : "READY UP";
     }
 
     /// <summary>
@@ -156,6 +237,7 @@ public partial class LobbyScreen : Control
             Dictionary<string, object> extra = (Dictionary<string, object>)lobbyMember["extra"];
             int colourIndex = (int)extra["colorIndex"];
             bool userIsHost = memberCxId == lobbyOwnerCxId;
+            bool isReady = lobbyMember.ContainsKey("isReady") && Convert.ToBoolean(lobbyMember["isReady"]);
 
             var lobbyMemberScene = GD.Load<PackedScene>("res://Scenes/LobbyMember.tscn");
             LobbyMember newLobbyMember = (LobbyMember)lobbyMemberScene.Instantiate();
@@ -163,10 +245,14 @@ public partial class LobbyScreen : Control
             // Add the newly instanced LobbyMember Scene to the Lobby Scene
             _lobbyMembersContainer.AddChild(newLobbyMember);
 
-            // Set the lobby member's name, colour, and host icon
+            // Set the lobby member's name, colour, host icon, YOU badge, and ready state
             newLobbyMember.SetName(name);
             newLobbyMember.SetColour(Main.Colours[colourIndex]);
-            newLobbyMember.SetHostIcon(userIsHost);
+            newLobbyMember.SetIsHost(userIsHost);
+            newLobbyMember.SetCxId(memberCxId);
+            newLobbyMember.SetIsMe(memberCxId == _localCxId);
+            newLobbyMember.SetReady(isReady);
+            newLobbyMember.Connect(LobbyMember.SignalName.ColourSwatchClicked, Callable.From(() => OnColourSwatchClicked(newLobbyMember)));
         }
 
         UpdatePingData(lobbyOwnerCxId, lobbyMembers);
@@ -285,12 +371,92 @@ public partial class LobbyScreen : Control
     }
 
     /// <summary>
+    /// Instance the this-lobby chat, global chat, and leaderboard panels. Called once by Main
+    /// right after this screen is shown.
+    /// </summary>
+    public void InitExtraPanels(BrainCloudWrapper bc)
+    {
+        var signalChatScene = GD.Load<PackedScene>("res://Scenes/LobbySignalChatPanel.tscn");
+        _lobbySignalChatPanel = (LobbySignalChatPanel)signalChatScene.Instantiate();
+        _chatTab.AddChild(_lobbySignalChatPanel);
+        _lobbySignalChatPanel.Connect(LobbySignalChatPanel.SignalName.SendRequested, new Callable(this, MethodName.OnLobbySignalSendRequested));
+
+        var chatScene = GD.Load<PackedScene>("res://Scenes/GlobalChatPanel.tscn");
+        _globalChatPanel = (GlobalChatPanel)chatScene.Instantiate();
+        _chatTab.AddChild(_globalChatPanel);
+        _globalChatPanel.Init(bc);
+
+        var leaderboardScene = GD.Load<PackedScene>("res://Scenes/LeaderboardPanel.tscn");
+        _leaderboardPanel = (LeaderboardPanel)leaderboardScene.Instantiate();
+        _leaderboardsTab.AddChild(_leaderboardPanel);
+        _leaderboardPanel.Init(bc);
+
+        SetChatSubTab(_chatSubTab);
+    }
+
+    private string _rightTab = "chat";
+    private string _chatSubTab = "thisLobby";
+
+    private void SetRightTab(string tab)
+    {
+        _rightTab = tab;
+        _chatTab.Visible = tab == "chat";
+        _leaderboardsTab.Visible = tab == "leaderboards";
+        _infoTab.Visible = tab == "info";
+        _chatTabBtn.Modulate = tab == "chat" ? new Color(1.4f, 1.4f, 1.4f) : Colors.White;
+        _leaderboardsTabBtn.Modulate = tab == "leaderboards" ? new Color(1.4f, 1.4f, 1.4f) : Colors.White;
+        _infoTabBtn.Modulate = tab == "info" ? new Color(1.4f, 1.4f, 1.4f) : Colors.White;
+    }
+
+    private void SetChatSubTab(string tab)
+    {
+        _chatSubTab = tab;
+        if (_lobbySignalChatPanel != null) _lobbySignalChatPanel.Visible = tab == "thisLobby";
+        if (_globalChatPanel != null) _globalChatPanel.Visible = tab == "global";
+        _thisLobbyTabBtn.Modulate = tab == "thisLobby" ? new Color(1.4f, 1.4f, 1.4f) : Colors.White;
+        _globalTabBtn.Modulate = tab == "global" ? new Color(1.4f, 1.4f, 1.4f) : Colors.White;
+    }
+
+    /// <summary>
+    /// Replay this-lobby chat history into a freshly (re)created screen — Main owns the
+    /// history so it survives across a return-to-lobby-after-a-match cycle, since this whole
+    /// screen is recreated on every GoToLobbyScreen() call.
+    /// </summary>
+    public void SetLobbyChatHistory(IEnumerable<(string fromName, string text, bool isMe)> history)
+    {
+        _lobbySignalChatPanel.Clear();
+        foreach (var m in history) _lobbySignalChatPanel.AddMessage(m.fromName, m.text, m.isMe);
+    }
+
+    public void AddLobbyChatMessage(string fromName, string text, bool isMe)
+    {
+        _lobbySignalChatPanel?.AddMessage(fromName, text, isMe);
+    }
+
+    private void OnLobbySignalSendRequested(string text)
+    {
+        EmitSignal(SignalName.LobbySignalSendRequested, text);
+    }
+
+    /// <summary>
     /// Change the user's colour.
     /// </summary>
     /// <param name="colourButtonIndex">int representing the colour index for GameColours.</param>
     public void OnColourButtonPressed(int colourButtonIndex)
     {
+        _colourPopup.Hide();
         EmitSignal(SignalName.ColourChanged, colourButtonIndex);
+    }
+
+    /// <summary>
+    /// Opens the colour-swatch popup anchored just below the given row (your own row only —
+    /// LobbyMember gates ColourSwatchClicked to the isMe row via its disabled ColorButton).
+    /// </summary>
+    private void OnColourSwatchClicked(LobbyMember row)
+    {
+        var rect = row.GetGlobalRect();
+        _colourPopup.Position = new Vector2I((int)rect.Position.X, (int)(rect.Position.Y + rect.Size.Y));
+        _colourPopup.Popup();
     }
 
     /// <summary>
@@ -315,5 +481,10 @@ public partial class LobbyScreen : Control
     private void OnStartButtonPressed()
     {
         EmitSignal(SignalName.StartMatchRequested);
+    }
+
+    private void OnReadyButtonPressed()
+    {
+        EmitSignal(SignalName.ReadyToggleRequested);
     }
 }

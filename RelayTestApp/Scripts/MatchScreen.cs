@@ -5,8 +5,6 @@ using System.Collections.Generic;
 public partial class MatchScreen : Control
 {
     [Signal]
-    public delegate void EndMatchRequestedEventHandler();
-    [Signal]
     public delegate void LeaveMatchRequestedEventHandler();
 
     // Settings HUD → relay send options (mirrors the dotnet RelayTestApp).
@@ -20,8 +18,16 @@ public partial class MatchScreen : Control
     public delegate void SendMaskChangedEventHandler(string cxId, bool value);
 
     private VBoxContainer _lobbyMembersContainer;
-    private Button _endMatchButton;
+    private VBoxContainer _scoreboardContainer;
     private Button _leaveMatchButton;
+
+    // Top-right HUD — match countdown + this client's own live relay ping.
+    private Label _timerLabel;
+    private Label _myPingLabel;
+
+    // Cached so UpdateScoreboard can resolve each entry's name/colour by cxId without Main
+    // having to pass the full lobby dict along with every ~250ms coverage recompute.
+    private Dictionary<string, object>[] _lastLobbyMembers = new Dictionary<string, object>[0];
 
     // Settings HUD controls
     private VBoxContainer _playersMaskContainer;
@@ -38,14 +44,18 @@ public partial class MatchScreen : Control
 
     public override void _Ready()
     {
-        _lobbyMembersContainer = GetNode<VBoxContainer>("MatchContainer/MatchInfo/MembersContainer");
-        _endMatchButton = GetNode<Button>("MatchContainer/GameSide/MatchButtons/EndMatchButton");
-        _leaveMatchButton = GetNode<Button>("MatchContainer/GameSide/MatchButtons/LeaveMatchButton");
+        const string matchInfo = "CenterContainer/MatchContainer/LeftCard/MatchInfo";
 
-        _playersMaskContainer = GetNode<VBoxContainer>("MatchContainer/MatchInfo/PlayersMaskContainer");
-        _reliableCheck = GetNode<CheckBox>("MatchContainer/MatchInfo/ReliableCheck");
-        _orderedCheck = GetNode<CheckBox>("MatchContainer/MatchInfo/OrderedCheck");
-        _channelOption = GetNode<OptionButton>("MatchContainer/MatchInfo/ChannelOption");
+        _lobbyMembersContainer = GetNode<VBoxContainer>($"{matchInfo}/MembersContainer");
+        _scoreboardContainer = GetNode<VBoxContainer>($"{matchInfo}/Scoreboard");
+        _leaveMatchButton = GetNode<Button>("HUD/TopRightCard/VBoxContainer/LeaveMatchButton");
+        _timerLabel = GetNode<Label>("HUD/TopRightCard/VBoxContainer/TimerRow/TimerLabel");
+        _myPingLabel = GetNode<Label>("HUD/TopRightCard/VBoxContainer/PingLabel");
+
+        _playersMaskContainer = GetNode<VBoxContainer>($"{matchInfo}/PlayersMaskContainer");
+        _reliableCheck = GetNode<CheckBox>($"{matchInfo}/ReliableCheck");
+        _orderedCheck = GetNode<CheckBox>($"{matchInfo}/OrderedCheck");
+        _channelOption = GetNode<OptionButton>($"{matchInfo}/ChannelOption");
 
         // Channel options map directly to BrainCloudRelay channel ints 0–3.
         if (_channelOption.ItemCount == 0)
@@ -57,21 +67,12 @@ public partial class MatchScreen : Control
         }
 
         // Connect Button listener(s)
-        _endMatchButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnEndMatchButtonPressed));
         _leaveMatchButton.Connect(Button.SignalName.Pressed, new Callable(this, MethodName.OnLeaveMatchButtonPressed));
 
         // Connect Settings HUD listener(s) — re-emit to Main.
         _reliableCheck.Connect(CheckBox.SignalName.Toggled, new Callable(this, MethodName.OnReliableToggled));
         _orderedCheck.Connect(CheckBox.SignalName.Toggled, new Callable(this, MethodName.OnOrderedToggled));
         _channelOption.Connect(OptionButton.SignalName.ItemSelected, new Callable(this, MethodName.OnChannelSelected));
-
-        // Hide button(s) when not necessary
-        _endMatchButton.Hide();
-    }
-
-    public void ToggleEndMatchButtonVisibility(bool userIsHost)
-    {
-        _endMatchButton.Visible = userIsHost;
     }
 
     /// <summary>
@@ -106,6 +107,7 @@ public partial class MatchScreen : Control
 
         string lobbyOwnerCxId = (string)lobby["ownerCxId"];
         Dictionary<string, object>[] lobbyMembers = (Dictionary<string, object>[])lobby["members"];
+        _lastLobbyMembers = lobbyMembers;
 
         foreach (var lobbyMember in lobbyMembers)
         {
@@ -115,6 +117,7 @@ public partial class MatchScreen : Control
             int colourIndex = (int)extra["colorIndex"];
 
             bool userIsHost = memberCxId == lobbyOwnerCxId;
+            bool isReady = lobbyMember.ContainsKey("isReady") && Convert.ToBoolean(lobbyMember["isReady"]);
 
             var lobbyMemberScene = GD.Load<PackedScene>("res://Scenes/LobbyMember.tscn");
             LobbyMember newLobbyMember = (LobbyMember)lobbyMemberScene.Instantiate();
@@ -122,10 +125,13 @@ public partial class MatchScreen : Control
             // Add the newly instanced LobbyMember Scene to the Lobby Scene
             _lobbyMembersContainer.AddChild(newLobbyMember);
 
-            // Set the lobby member's name, colour, and host icon
+            // Set the lobby member's name, colour, host icon, YOU badge, and ready state
             newLobbyMember.SetName(name);
             newLobbyMember.SetColour(Main.Colours[colourIndex]);
-            newLobbyMember.SetHostIcon(userIsHost);
+            newLobbyMember.SetIsHost(userIsHost);
+            newLobbyMember.SetCxId(memberCxId);
+            newLobbyMember.SetIsMe(memberCxId == _localCxId);
+            newLobbyMember.SetReady(isReady);
         }
 
         BuildPlayersMask(lobbyOwnerCxId, lobbyMembers);
@@ -183,11 +189,59 @@ public partial class MatchScreen : Control
     public void SetActivePing(string cxId, string text)
     {
         if (_pingLabels.TryGetValue(cxId, out var label)) label.Text = text;
+        if (cxId == _localCxId) _myPingLabel.Text = "● Ping: " + text;
     }
 
-    private void OnEndMatchButtonPressed()
+    /// <summary>
+    /// Updates the top-right HUD countdown (called by Main.TickMatch roughly every 250ms).
+    /// </summary>
+    public void UpdateTimer(long remainingMs)
     {
-        EmitSignal(SignalName.EndMatchRequested);
+        long remainingSec = remainingMs / 1000;
+        _timerLabel.Text = $"{remainingSec / 60:D2}:{remainingSec % 60:D2}";
+    }
+
+    /// <summary>
+    /// Live RANK/PLAYER/COVERAGE standings — see Coverage.cs (Main.TickMatch recomputes this
+    /// roughly every 250ms from the current splotches).
+    /// </summary>
+    public void UpdateScoreboard(List<Coverage.Entry> coverage, string localCxId)
+    {
+        foreach (Node child in _scoreboardContainer.GetChildren()) child.QueueFree();
+
+        foreach (var entry in coverage)
+        {
+            Dictionary<string, object> member = null;
+            foreach (var m in _lastLobbyMembers)
+            {
+                if ((string)m["cxId"] == entry.CxId) { member = m; break; }
+            }
+            if (member == null) continue;
+
+            bool isMe = entry.CxId == localCxId;
+            var extra = (Dictionary<string, object>)member["extra"];
+            int colourIndex = extra.ContainsKey("colorIndex") ? Convert.ToInt32(extra["colorIndex"]) : 0;
+
+            var row = new HBoxContainer();
+
+            var rank = new Label { Text = "#" + entry.Rank, CustomMinimumSize = new Vector2(36, 0) };
+            rank.AddThemeColorOverride("font_color", LeaderboardPanel.RankColor(entry.Rank));
+
+            var dot = new ColorRect { CustomMinimumSize = new Vector2(10, 10), Color = Main.Colours[colourIndex % Main.Colours.Length] };
+
+            var name = new Label { Text = (string)member["name"] + (isMe ? " (YOU)" : "") };
+            name.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            if (isMe) name.AddThemeColorOverride("font_color", new Color(0.35f, 1f, 0.45f));
+
+            var coveragePct = new Label { Text = entry.CoveragePct.ToString("F0") + "%" };
+            if (isMe) coveragePct.AddThemeColorOverride("font_color", new Color(0.35f, 1f, 0.45f));
+
+            row.AddChild(rank);
+            row.AddChild(dot);
+            row.AddChild(name);
+            row.AddChild(coveragePct);
+            _scoreboardContainer.AddChild(row);
+        }
     }
 
     private void OnLeaveMatchButtonPressed()

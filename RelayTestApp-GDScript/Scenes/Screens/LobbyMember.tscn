@@ -4,13 +4,24 @@
 
 [node name="LobbyMember" type="HBoxContainer"]
 script = ExtResource("1_lmember")
-theme_override_constants/separation = 8
-custom_minimum_size = Vector2(0, 28)
+theme_override_constants/separation = 10
+custom_minimum_size = Vector2(0, 32)
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorButton" type="Button" parent="."]
 layout_mode = 2
 custom_minimum_size = Vector2(20, 20)
 size_flags_vertical = 4
+flat = true
+disabled = true
+
+[node name="ColorRect" type="ColorRect" parent="ColorButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 color = Color(1, 1, 1, 1)
 
 [node name="NameLabel" type="Label" parent="."]
@@ -19,8 +30,32 @@ size_flags_horizontal = 3
 text = "Player"
 theme_override_font_sizes/font_size = 15
 
+[node name="YouBadge" type="Label" parent="."]
+visible = false
+layout_mode = 2
+text = "(you)"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.35, 1, 0.45, 1)
+
+[node name="HostBadge" type="Label" parent="."]
+visible = false
+layout_mode = 2
+text = "HOST"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1.0, 0.84, 0.0, 1.0)
+
+[node name="ReadyLabel" type="Label" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(70, 0)
+text = "Not Ready"
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)
+
 [node name="PingLabel" type="Label" parent="."]
 layout_mode = 2
+custom_minimum_size = Vector2(56, 0)
 text = "-- ms"
+horizontal_alignment = 2
+clip_text = true
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)

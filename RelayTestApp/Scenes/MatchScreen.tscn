@@ -1,98 +1,130 @@
-[gd_scene load_steps=3 format=3 uid="uid://2tdx4xwsn4ay"]
+[gd_scene load_steps=4 format=3 uid="uid://2tdx4xwsn4ay"]
 
 [ext_resource type="Script" path="res://Scripts/MatchScreen.cs" id="1_alm0g"]
 [ext_resource type="PackedScene" uid="uid://41ym1uguxloj" path="res://Scenes/CursorParty.tscn" id="2_ddwf5"]
+[ext_resource type="StyleBoxFlat" path="res://Themes/card_style.tres" id="3_card"]
 
 [node name="MatchScreen" type="Control"]
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_alm0g")
 
-[node name="MatchContainer" type="HBoxContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -402.0
-offset_top = -317.5
-offset_right = 402.0
-offset_bottom = 317.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 400
 
-[node name="MatchInfo" type="VBoxContainer" parent="MatchContainer"]
+[node name="MatchContainer" type="HBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="LeftCard" type="PanelContainer" parent="CenterContainer/MatchContainer"]
+custom_minimum_size = Vector2(420, 0)
+layout_mode = 2
+theme_override_styles/panel = ExtResource("3_card")
+
+[node name="MatchInfo" type="VBoxContainer" parent="CenterContainer/MatchContainer/LeftCard"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Header" type="Label" parent="MatchContainer/MatchInfo"]
+[node name="ScoreboardHeader" type="Label" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 20
+text = "RANK / PLAYER / COVERAGE"
+
+[node name="Scoreboard" type="VBoxContainer" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
 text = "LOBBY MEMBERS"
 
-[node name="MembersContainer" type="VBoxContainer" parent="MatchContainer/MatchInfo"]
+[node name="MembersContainer" type="VBoxContainer" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 
-[node name="SettingsHeader" type="Label" parent="MatchContainer/MatchInfo"]
+[node name="SettingsHeader" type="Label" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 18
 text = "SETTINGS"
 
-[node name="PlayersLabel" type="Label" parent="MatchContainer/MatchInfo"]
+[node name="PlayersLabel" type="Label" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 text = "Players (shockwave mask):"
 
-[node name="PlayersMaskContainer" type="VBoxContainer" parent="MatchContainer/MatchInfo"]
+[node name="PlayersMaskContainer" type="VBoxContainer" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 
-[node name="ReliableCheck" type="CheckBox" parent="MatchContainer/MatchInfo"]
+[node name="ReliableCheck" type="CheckBox" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 text = "Reliable"
 
-[node name="OrderedCheck" type="CheckBox" parent="MatchContainer/MatchInfo"]
+[node name="OrderedCheck" type="CheckBox" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 button_pressed = true
 text = "Ordered"
 
-[node name="ChannelLabel" type="Label" parent="MatchContainer/MatchInfo"]
+[node name="ChannelLabel" type="Label" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 text = "Channel:"
 
-[node name="ChannelOption" type="OptionButton" parent="MatchContainer/MatchInfo"]
+[node name="ChannelOption" type="OptionButton" parent="CenterContainer/MatchContainer/LeftCard/MatchInfo"]
 layout_mode = 2
 
-[node name="GameSide" type="VBoxContainer" parent="MatchContainer"]
+[node name="GameSide" type="VBoxContainer" parent="CenterContainer/MatchContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 50
+theme_override_constants/separation = 20
 
-[node name="GameArea" type="MarginContainer" parent="MatchContainer/GameSide"]
+[node name="GameArea" type="MarginContainer" parent="CenterContainer/MatchContainer/GameSide"]
 custom_minimum_size = Vector2(800, 600)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="CursorParty" parent="MatchContainer/GameSide/GameArea" instance=ExtResource("2_ddwf5")]
+[node name="CursorParty" parent="CenterContainer/MatchContainer/GameSide/GameArea" instance=ExtResource("2_ddwf5")]
 
-[node name="MatchButtons" type="HBoxContainer" parent="MatchContainer/GameSide"]
-layout_mode = 2
+[node name="HUD" type="CanvasLayer" parent="."]
 
-[node name="EndMatchButton" type="Button" parent="MatchContainer/GameSide/MatchButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "END MATCH"
+[node name="TopRightCard" type="PanelContainer" parent="HUD"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 16.0
+offset_right = -16.0
+grow_horizontal = 0
+theme_override_styles/panel = ExtResource("3_card")
 
-[node name="LeaveMatchButton" type="Button" parent="MatchContainer/GameSide/MatchButtons"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/TopRightCard"]
 layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "LEAVE MATCH & LOBBY"
+theme_override_constants/separation = 4
+
+[node name="TimerRow" type="HBoxContainer" parent="HUD/TopRightCard/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="TimerLabel" type="Label" parent="HUD/TopRightCard/VBoxContainer/TimerRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 32
+text = "01:30"
+horizontal_alignment = 1
+
+[node name="PingLabel" type="Label" parent="HUD/TopRightCard/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.55, 0.85, 0.55, 1)
+text = "● Ping: ... ms"
+horizontal_alignment = 1
+
+[node name="LeaveMatchButton" type="Button" parent="HUD/TopRightCard/VBoxContainer"]
+layout_mode = 2
+text = "Exit Match"
