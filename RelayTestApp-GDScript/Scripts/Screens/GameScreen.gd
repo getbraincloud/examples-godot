@@ -199,7 +199,8 @@ func _send_relay_all(msg: Dictionary, reliable: bool, ordered: bool, channel: in
 	AppState.bc.relay_service.send(JSON.stringify(msg).to_utf8_buffer(),
 								   BrainCloudRelay.TO_ALL_PLAYERS, reliable, ordered, channel)
 
-# Send respecting the player mask checkboxes.
+# Send respecting the player mask checkboxes — a single bitmask send_to_players() call, not a
+# per-target send() loop (matches cpp/csharp/js's SendToPlayers(BuildSendMask(), ...)).
 func _send_to_targets(data: PackedByteArray, reliable: bool, ordered: bool, channel: int) -> void:
 	if _send_to.is_empty():
 		AppState.bc.relay_service.send(data, BrainCloudRelay.TO_ALL_PLAYERS, reliable, ordered, channel)
@@ -211,10 +212,12 @@ func _send_to_targets(data: PackedByteArray, reliable: bool, ordered: bool, chan
 			break
 	if all_on:
 		AppState.bc.relay_service.send(data, BrainCloudRelay.TO_ALL_PLAYERS, reliable, ordered, channel)
-	else:
-		for cx in _send_to:
-			if _send_to[cx] and _cx_to_net_id.has(cx):
-				AppState.bc.relay_service.send(data, _cx_to_net_id[cx], reliable, ordered, channel)
+		return
+	var mask := 0
+	for cx in _send_to:
+		if _send_to[cx] and _cx_to_net_id.has(cx):
+			mask |= 1 << int(_cx_to_net_id[cx])
+	AppState.bc.relay_service.send_to_players(data, mask, reliable, ordered, channel)
 
 # ── Relay receive ─────────────────────────────────────────────────────────────
 

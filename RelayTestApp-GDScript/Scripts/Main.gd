@@ -323,44 +323,26 @@ func _fetch_and_ping_regions(lobby_type: String) -> void:
 		push_error("get_regions_for_lobbies failed: ", result)
 		return
 
-	var region_ping_data: Dictionary = result.get("data", {}).get("regionPingData", {})
-	if region_ping_data.is_empty():
+	var regions: Array = AppState.bc.lobby_service.get_ping_target_regions()
+	if regions.is_empty():
 		return
-
-	var regions: Array = region_ping_data.keys()
 
 	# Live per-region status list — one line per region, updated as each ping resolves
 	# (mirrors cpp's loading dialog: "region: pinging..." -> "region: N ms" / "region: T/O" —
-	# not just a single static "Pinging N region(s)..." message for the whole batch).
+	# not just a single static "Pinging N region(s)..." message for the whole batch). The actual
+	# pinging (timing, averaging, drop-slowest) now lives in the SDK's ping_regions(), matching
+	# cpp/csharp/js's client-side PingRegions — this just drives the loading-screen text off its
+	# per-region progress callback.
 	var region_status: Dictionary = {}
 	for region: String in regions:
 		region_status[region] = "pinging..."
 	_show_region_ping_status(regions, region_status)
 
-	for region: String in regions:
-		var info: Dictionary = region_ping_data[region]
-		var target: String   = info.get("target", "")
-		var ping_port: int   = int(info.get("pingPort", 80))
-		var ms: int
-
-		if target.is_empty():
-			ms = 999
-		else:
-			var url := "http://%s:%d/" % [target, ping_port]
-			var http := HTTPRequest.new()
-			http.timeout = 2.0
-			add_child(http)
-			var start_ms := Time.get_ticks_msec()
-			if http.request(url, [], HTTPClient.METHOD_HEAD) == OK:
-				await http.request_completed
-				ms = mini(int(Time.get_ticks_msec() - start_ms), 999)
-			else:
-				ms = 999
-			http.queue_free()
-
-		AppState.ping_data[region] = ms
-		region_status[region] = "T/O" if ms >= 999 else "%d ms" % ms
-		_show_region_ping_status(regions, region_status)
+	AppState.ping_data = await AppState.bc.lobby_service.ping_regions(
+		func(region: String, ms: int) -> void:
+			region_status[region] = "T/O" if ms >= 999 else "%d ms" % ms
+			_show_region_ping_status(regions, region_status)
+	)
 
 func _show_region_ping_status(regions: Array, region_status: Dictionary) -> void:
 	var lines: Array = ["Pinging %d region(s)..." % regions.size(), ""]
@@ -605,19 +587,15 @@ func _on_host_end_match() -> void:
 			"op":      "END_MATCH"
 		})
 
-# Voluntary early leave — skips the results screen entirely and re-readies immediately
-# (mirrors the old pre-Match-Summary auto-ready behaviour; kept just for this opt-out path
-# since the normal END_MATCH flow now waits for an explicit "Queue for Rematch").
+# Voluntary early leave — skips the results screen entirely and leaves the lobby, matching
+# "Exit Match" on every other platform (dotnet/react/Godot C#).
 func _on_leave_game_requested() -> void:
 	_teardown_relay()
 	AppState.game_start_time_ms = 0
-	if AppState.user_cx_id != AppState.lobby_owner_cx_id and not AppState.lobby_id.is_empty():
-		AppState.user_is_ready = true
-		AppState.bc.lobby_service.update_ready(
-			AppState.lobby_id, true,
-			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
-		)
-	_show_screen(_LOBBY_SCENE)
+	if not AppState.lobby_id.is_empty():
+		AppState.bc.lobby_service.leave_lobby(AppState.lobby_id)
+	_tear_down_rtt()
+	_show_screen(_MENU_SCENE)
 
 # The Match Summary + rematch-queue screen (BCLOUD-14489). match_result is usually already
 # populated by the time END_MATCH arrives (TickMatch's auto-end sequence broadcasts it
