@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://dqleaderboard01"]
+
+[ext_resource type="Script" path="res://Scripts/LeaderboardPanel.cs" id="1_lb01"]
+
+[node name="LeaderboardPanel" type="VBoxContainer"]
+custom_minimum_size = Vector2(320, 220)
+layout_mode = 2
+script = ExtResource("1_lb01")
+
+[node name="BoardRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="PointsButton" type="Button" parent="BoardRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Most Opponents Beaten"
+
+[node name="CoverageButton" type="Button" parent="BoardRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Highest Coverage %"
+
+[node name="PeriodRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="LifetimeButton" type="Button" parent="PeriodRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Lifetime"
+
+[node name="QuarterlyButton" type="Button" parent="PeriodRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "Quarterly"
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
