@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://Scripts/Screens/LobbyScreen.gd" id="1_lobby"]
+[ext_resource type="PackedScene" path="res://Scenes/LobbySignalChatPanel.tscn" id="2_lchat"]
+[ext_resource type="PackedScene" path="res://Scenes/GlobalChatPanel.tscn" id="3_gchat"]
+[ext_resource type="PackedScene" path="res://Scenes/LeaderboardPanel.tscn" id="4_lb"]
+[ext_resource type="StyleBoxFlat" path="res://Themes/card_style.tres" id="5_card"]
 
 [node name="LobbyScreen" type="Control"]
 layout_mode = 3
@@ -11,6 +15,19 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_lobby")
 
+[node name="StatusLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 24
+offset_bottom = 48
+grow_horizontal = 2
+horizontal_alignment = 1
+text = "Waiting..."
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 1)
+unique_name_in_owner = true
+
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -19,113 +36,175 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterContainer"]
-layout_mode = 2
-custom_minimum_size = Vector2(860, 0)
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer"]
+[node name="LeftCard" type="PanelContainer" parent="CenterContainer/HBoxContainer"]
+custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+theme_override_styles/panel = ExtResource("5_card")
+
+[node name="LeftPanel" type="VBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard"]
+layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="TitleLabel" type="Label" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel"]
 layout_mode = 2
 text = "Lobby"
 theme_override_font_sizes/font_size = 22
 
-[node name="LobbyIdLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-text = "Lobby: —"
-theme_override_font_sizes/font_size = 13
-unique_name_in_owner = true
-
-[node name="RegionLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-text = "Region: —"
-theme_override_font_sizes/font_size = 13
-unique_name_in_owner = true
-
-[node name="PlayerCountLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-text = "Players: 0"
-theme_override_font_sizes/font_size = 13
-unique_name_in_owner = true
-
-[node name="TimerLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-text = "00:00"
-theme_override_font_sizes/font_size = 13
-unique_name_in_owner = true
-
-[node name="StatusLabel" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-text = "Waiting..."
-theme_override_font_sizes/font_size = 14
-theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 1)
-unique_name_in_owner = true
-
-[node name="Sep" type="HSeparator" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="Sep" type="HSeparator" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel"]
 layout_mode = 2
 
-[node name="MembersTitle" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="MembersTitle" type="Label" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel"]
 layout_mode = 2
 text = "Members"
 theme_override_font_sizes/font_size = 15
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel"]
+custom_minimum_size = Vector2(0, 260)
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="MemberList" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel/ScrollContainer"]
+[node name="MemberListMargin" type="MarginContainer" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel/ScrollContainer"]
+layout_mode = 2
+theme_override_constants/margin_right = 14
+
+[node name="MemberList" type="VBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel/ScrollContainer/MemberListMargin"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 6
 unique_name_in_owner = true
 
-[node name="PingRegionsContainer" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
-layout_mode = 2
-unique_name_in_owner = true
-
-[node name="Spacer" type="Control" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="Spacer" type="Control" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="ButtonRow" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel"]
 layout_mode = 2
 alignment = 1
 theme_override_constants/separation = 16
 
-[node name="LeaveButton" type="Button" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
+[node name="LeaveButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel/ButtonRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(100, 0)
 text = "Leave"
 unique_name_in_owner = true
 
-[node name="ReadyButton" type="Button" parent="CenterContainer/MarginContainer/HBoxContainer/LeftPanel/ButtonRow"]
+[node name="ReadyButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/LeftPanel/ButtonRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(160, 0)
 text = "Ready"
 unique_name_in_owner = true
 
-[node name="RightPanel" type="VBoxContainer" parent="CenterContainer/MarginContainer/HBoxContainer"]
+[node name="RightPanel" type="VBoxContainer" parent="CenterContainer/HBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(320, 0)
+custom_minimum_size = Vector2(380, 0)
 theme_override_constants/separation = 8
 
-[node name="ColorTitle" type="Label" parent="CenterContainer/MarginContainer/HBoxContainer/RightPanel"]
+[node name="TabRow" type="HBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel"]
 layout_mode = 2
-text = "Choose Colour"
-theme_override_font_sizes/font_size = 15
+theme_override_constants/separation = 4
 
-[node name="ColorGrid" type="GridContainer" parent="CenterContainer/MarginContainer/HBoxContainer/RightPanel"]
+[node name="ChatTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "CHAT"
+
+[node name="LeaderboardsTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LEADERBOARDS"
+
+[node name="InfoTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "INFO"
+
+[node name="RightCard" type="PanelContainer" parent="CenterContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("5_card")
+
+[node name="ChatTab" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="SubTabRow" type="HBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ThisLobbyTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab/SubTabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "THIS LOBBY"
+
+[node name="GlobalTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab/SubTabRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "GLOBAL"
+
+[node name="LobbySignalChatPanel" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab" instance=ExtResource("2_lchat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GlobalChatPanel" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab" instance=ExtResource("3_gchat")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeaderboardsTab" parent="CenterContainer/HBoxContainer/RightPanel/RightCard" instance=ExtResource("4_lb")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InfoTab" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LobbyIdLabel" type="Label" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/InfoTab"]
+layout_mode = 2
+text = "Lobby: —"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="RegionLabel" type="Label" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/InfoTab"]
+layout_mode = 2
+text = "Region: —"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="PlayerCountLabel" type="Label" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/InfoTab"]
+layout_mode = 2
+text = "Players: 0"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="TimerLabel" type="Label" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/InfoTab"]
+layout_mode = 2
+text = "Time in lobby: 00:00"
+theme_override_font_sizes/font_size = 13
+unique_name_in_owner = true
+
+[node name="PingRegionsContainer" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/InfoTab"]
+layout_mode = 2
+unique_name_in_owner = true
+
+[node name="ColorPopup" type="PopupPanel" parent="."]
+unique_name_in_owner = true
+
+[node name="ColorPopupGrid" type="GridContainer" parent="ColorPopup"]
 columns = 10
 unique_name_in_owner = true

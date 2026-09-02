@@ -18,6 +18,13 @@ public partial class CursorParty : Area2D
 
 	private Member arrowRef;
 
+	// Hold-to-paint: holding the left mouse button down auto-repeats a splotch at this fixed
+	// interval (the initial click still paints immediately via the InputEventMouseButton path
+	// below) — same value across cpp/js/both Godot ports so holding paints at the same rate
+	// for everyone in a shared match.
+	private const double AutoPaintIntervalSec = 0.15;
+	private double _autoPaintAccum = 0.0;
+
 	public override void _Ready()
 	{
 		_gameAreaPanel = GetNode<Panel>("GameAreaPanel");
@@ -55,6 +62,27 @@ public partial class CursorParty : Area2D
 			_mousePosition = new Vector2(normalizedX, normalizedY);
 
 			EmitSignal(SignalName.MouseMoved, _mousePosition);
+
+			// Hold-to-paint — checks the actual OS button state (not a pressed/released flag)
+			// so it self-corrects if a release event is ever missed (e.g. losing window focus
+			// mid-hold).
+			if (Input.IsMouseButtonPressed(MouseButton.Left))
+			{
+				_autoPaintAccum += delta;
+				if (_autoPaintAccum >= AutoPaintIntervalSec)
+				{
+					_autoPaintAccum = 0.0;
+					EmitSignal(SignalName.MouseClicked, _mousePosition, (int)MouseButton.Left);
+				}
+			}
+			else
+			{
+				_autoPaintAccum = 0.0;
+			}
+		}
+		else
+		{
+			_autoPaintAccum = 0.0;
 		}
 	}
 

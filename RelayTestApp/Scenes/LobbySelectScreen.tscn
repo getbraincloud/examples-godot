@@ -1,47 +1,52 @@
-[gd_scene load_steps=2 format=3 uid="uid://bw3r6evgfiglc"]
+[gd_scene load_steps=3 format=3 uid="uid://bw3r6evgfiglc"]
 
 [ext_resource type="Script" path="res://Scripts/LobbySelectScreen.cs" id="1_dnmy6"]
+[ext_resource type="StyleBoxFlat" path="res://Themes/card_style.tres" id="2_card"]
 
 [node name="LobbySelectScreen" type="Control"]
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_dnmy6")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -225.0
-offset_top = -124.5
-offset_right = 225.0
-offset_bottom = 124.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="AuthenticatedUser" type="HBoxContainer" parent="VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="LeftCard" type="PanelContainer" parent="CenterContainer/HBoxContainer"]
+custom_minimum_size = Vector2(450, 0)
+layout_mode = 2
+theme_override_styles/panel = ExtResource("2_card")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard"]
+layout_mode = 2
+
+[node name="AuthenticatedUser" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="GreetingLabel" type="Label" parent="VBoxContainer/AuthenticatedUser"]
+[node name="GreetingLabel" type="Label" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/AuthenticatedUser"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "Welcome, "
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/AuthenticatedUser"]
+[node name="NameLabel" type="Label" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/AuthenticatedUser"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "_USER"
 
-[node name="LobbyOptions" type="OptionButton" parent="VBoxContainer"]
+[node name="LobbyOptions" type="OptionButton" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 selected = 0
@@ -50,7 +55,7 @@ popup/item_0/text = "CursorPartyV2"
 popup/item_1/text = "CursorPartyV2Backfill"
 popup/item_1/id = 1
 
-[node name="ProtocolOptions" type="OptionButton" parent="VBoxContainer"]
+[node name="ProtocolOptions" type="OptionButton" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 selected = 0
@@ -61,29 +66,55 @@ popup/item_1/id = 1
 popup/item_2/text = "UDP"
 popup/item_2/id = 2
 
-[node name="PingDataCheck" type="CheckBox" parent="VBoxContainer"]
+[node name="PingDataCheck" type="CheckBox" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Use region ping data"
 
-[node name="ErrorMessage" type="Label" parent="VBoxContainer"]
+[node name="ErrorMessage" type="Label" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.827451, 0, 0, 1)
 theme_override_font_sizes/font_size = 25
 text = "_Error finding/creating lobby"
 horizontal_alignment = 1
 
-[node name="MenuButtons" type="VBoxContainer" parent="VBoxContainer"]
+[node name="MenuButtons" type="VBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
 layout_mode = 2
 
-[node name="MatchMakeButton" type="Button" parent="VBoxContainer/MenuButtons"]
+[node name="MatchMakeButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/MenuButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 text = "FIND OR CREATE LOBBY"
 
-[node name="LogOutButton" type="Button" parent="VBoxContainer/MenuButtons"]
+[node name="LogOutButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/MenuButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 30
 text = "LOG OUT"
+
+[node name="RightPanel" type="VBoxContainer" parent="CenterContainer/HBoxContainer"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TabRow" type="HBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LeaderboardTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "LEADERBOARD"
+
+[node name="ChatTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 16
+text = "CHAT"
+
+[node name="ExtraPanels" type="PanelContainer" parent="CenterContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("2_card")
