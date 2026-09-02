@@ -7,3 +7,5 @@ RelayTestApp/build/ids.txt
 /RelayTestApp/build
 /RelayTestApp-GDScript/.godot/editor
 /RelayTestApp-GDScript/.godot/shader_cache
+GodotAuthentication/addons/braincloud/braincloud.cfg
+RelayTestApp/addons/braincloud/braincloud.cfg
