@@ -2,3 +2,6 @@
 .godot/
 *.meta
 .vs/
+
+# brainCloud editor plugin credentials (app id/secret) — per-project, never committed
+addons/braincloud/braincloud.cfg

@@ -38,42 +38,18 @@ const _RESULTS_POLL_INTERVAL_SEC := 1.0
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
-const _CREDS_PATH := "res://addons/braincloud/braincloud.cfg"
-
 func _ready() -> void:
 	AppState.bc = get_node("/root/brainCloud")
-	var app_secret := _bc_setting("app_secret", Ids.APP_SECRET)
-	var app_id     := _bc_setting("app_id",     Ids.APP_ID)
-	var app_ver    := _bc_setting("app_version", Ids.APP_VERSION)
-	var server_url := _bc_setting("server_url", Ids.SERVER_URL)
-	AppState.bc.init(app_secret, app_id, app_ver, server_url)
-	AppState.bc.braincloud_client.enable_compression(true)
-	var enable_log := bool(ProjectSettings.get_setting("braincloud/debug/enable_logging", false))
-	AppState.bc.braincloud_client.enable_logging(enable_log)
+
+	# Compression + logging are applied inside init() itself, from ProjectSettings
+	# (braincloud/config/enable_compression, braincloud/debug/enable_logging).
+	AppState.bc.init()
+
 	var bc_ver: String = AppState.bc.braincloud_client.get_braincloud_version()
-	_version_label.text = "v%s\nBC %s" % [app_ver, bc_ver]
+	_version_label.text = "v%s\nBC %s" % [AppState.bc.get_app_version(), bc_ver]
 	_loading_overlay.hide()
 	_cancel_btn.pressed.connect(_on_cancel_search_pressed)
 	_show_screen(_LOGIN_SCENE)
-
-
-# Reads a brainCloud credential or config value. Credentials (app_id, app_secret)
-# come from the gitignored braincloud.cfg; other keys come from ProjectSettings.
-# Falls back to Ids.gd constants in both cases.
-func _bc_setting(key: String, fallback: String) -> String:
-	if key in ["app_id", "app_secret"]:
-		var cfg := ConfigFile.new()
-		if cfg.load(_CREDS_PATH) == OK:
-			var v := str(cfg.get_value("credentials", key, ""))
-			if not v.is_empty():
-				return v
-		return fallback
-	var setting := "braincloud/config/" + key
-	if ProjectSettings.has_setting(setting):
-		var val: String = str(ProjectSettings.get_setting(setting, ""))
-		if not val.is_empty():
-			return val
-	return fallback
 
 # ── Tick ──────────────────────────────────────────────────────────────────────
 

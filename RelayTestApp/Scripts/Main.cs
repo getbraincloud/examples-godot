@@ -276,10 +276,12 @@ public partial class Main : Node
 		// Display loading screen
 		LoadScene("Initializing brainCloud");
 		
-		// Initialize brainCloud
+		// Initialize brainCloud. Try the editor plugin's saved credentials
+		// (addons/braincloud/braincloud.cfg) first; fall back to the generated Ids
+		// class if that didn't find anything to initialize with.
 		_brainCloudWrapper = new BrainCloudWrapper();
-		_brainCloudWrapper.Init(Ids._url, Ids._appSecret, Ids._appID, Ids._version);
-
+		_brainCloudWrapper.Init();
+		
 		// Persistent version overlay (always visible, every screen) — App + brainCloud client version.
 		var versionOverlay = GetNodeOrNull<Label>("VersionOverlay");
 		if (versionOverlay != null)
