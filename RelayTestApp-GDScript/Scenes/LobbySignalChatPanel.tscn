@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/LobbySignalChatPanel.gd" id="1_lchat"]
+
+[node name="LobbySignalChatPanel" type="VBoxContainer"]
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+theme_override_constants/separation = 4
+script = ExtResource("1_lchat")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Lobby Chat"
+
+[node name="Scroll" type="ScrollContainer" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Messages" type="VBoxContainer" parent="Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 2
+
+[node name="InputRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Input" type="LineEdit" parent="InputRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Say something..."
+
+[node name="SendButton" type="Button" parent="InputRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Send"

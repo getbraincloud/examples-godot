@@ -43,18 +43,15 @@ public partial class BCManager : Node
 
     private BrainCloudWrapper _brainCloudWrapper;
 
-    // TODO:  replace these values with the IDs from your app
-    //private string _url = "";
-    //private string _secretKey = "";
-    //private string _appId = "";
-    //private string _version = "";
-
     public override void _Ready()
     {
         _brainCloudWrapper = new BrainCloudWrapper();
 
-        // TODO:  replace these values with the IDs from your app
-        //_brainCloudWrapper.Init(_url, _secretKey, _appId, _version);
+        // Uses the credentials saved by the brainCloud editor plugin's login flow —
+        // open the "brainCloud" dock (bottom panel), log in, and pick/create an app.
+        // No manual id entry needed; to override explicitly instead, call
+        // _brainCloudWrapper.Init(url, secretKey, appId, version).
+        _brainCloudWrapper.Init();
 
         _brainCloudWrapper.Client.EnableLogging(true);
 
