@@ -8,14 +8,26 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="Cursor Party"
 run/main_scene="res://Scenes/Main.tscn"
-config/features=PackedStringArray("4.1", "C#", "Forward Plus")
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 boot_splash/image="res://Art/logobc-app-icon-rounded_crop.png"
-boot_splash/fullsize=false
 config/icon="res://Art/logobc-app-icon-rounded_crop.png"
+boot_splash/stretch_mode=0
+
+[autoload]
+
+brainCloud="*uid://ci8ugqmhpaq6t"
+
+[braincloud]
+
+config/server_url="https://api.internal.braincloudservers.com/dispatcherv2"
 
 [display]
 
@@ -26,3 +38,11 @@ window/stretch/mode="viewport"
 [dotnet]
 
 project/assembly_name="RTA"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/braincloud/plugin.cfg")
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true

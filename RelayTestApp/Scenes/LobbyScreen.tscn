@@ -1,60 +1,149 @@
-[gd_scene load_steps=2 format=3 uid="uid://bhvjmka37cf3b"]
+[gd_scene load_steps=3 format=3 uid="uid://bhvjmka37cf3b"]
 
 [ext_resource type="Script" path="res://Scripts/LobbyScreen.cs" id="1_hh4cg"]
+[ext_resource type="StyleBoxFlat" path="res://Themes/card_style.tres" id="2_card"]
 
 [node name="LobbyScreen" type="Control"]
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_hh4cg")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="ColorPopup" type="PopupPanel" parent="."]
+
+[node name="ColourButtons" type="GridContainer" parent="ColorPopup"]
+columns = 10
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -240.0
-offset_top = -104.0
-offset_right = 240.0
-offset_bottom = 104.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ColourButtons" type="GridContainer" parent="VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer"]
 layout_mode = 2
-columns = 10
+theme_override_constants/separation = 20
 
-[node name="LobbyMembersContainer" type="VBoxContainer" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 50)
+[node name="LeftCard" type="PanelContainer" parent="CenterContainer/HBoxContainer"]
+custom_minimum_size = Vector2(480, 0)
 layout_mode = 2
+theme_override_styles/panel = ExtResource("2_card")
 
-[node name="PingDataContainer" type="VBoxContainer" parent="VBoxContainer"]
-layout_mode = 2
-
-[node name="LobbyButtons" type="VBoxContainer" parent="VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard"]
 layout_mode = 2
 
-[node name="StartButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+[node name="MembersScroll" type="ScrollContainer" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="LobbyMembersContainer" type="VBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/MembersScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "START MATCH"
 
-[node name="JoinButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+[node name="Spacer" type="Control" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LobbyButtons" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="LeaveButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/LobbyButtons"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Leave Lobby"
+
+[node name="ButtonsSpacer" type="Control" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/LobbyButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "JOIN MATCH"
 
-[node name="LeaveButton" type="Button" parent="VBoxContainer/LobbyButtons"]
+[node name="ActionButtons" type="HBoxContainer" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/LobbyButtons"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="StartButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/LobbyButtons/ActionButtons"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Start Match"
+
+[node name="ReadyButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/LobbyButtons/ActionButtons"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Ready Up"
+
+[node name="JoinButton" type="Button" parent="CenterContainer/HBoxContainer/LeftCard/VBoxContainer/LobbyButtons/ActionButtons"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Join Match"
+
+[node name="RightPanel" type="VBoxContainer" parent="CenterContainer/HBoxContainer"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TabRow" type="HBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChatTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 30
-text = "LEAVE LOBBY"
+theme_override_font_sizes/font_size = 14
+text = "CHAT"
+
+[node name="LeaderboardsTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "LEADERBOARDS"
+
+[node name="InfoTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/TabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "INFO"
+
+[node name="RightCard" type="PanelContainer" parent="CenterContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("2_card")
+
+[node name="ChatTab" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SubTabRow" type="HBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ThisLobbyTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab/SubTabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "THIS LOBBY"
+
+[node name="GlobalTabBtn" type="Button" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/ChatTab/SubTabRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "GLOBAL"
+
+[node name="LeaderboardsTab" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard"]
+layout_mode = 2
+
+[node name="InfoTab" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard"]
+layout_mode = 2
+
+[node name="PingDataContainer" type="VBoxContainer" parent="CenterContainer/HBoxContainer/RightPanel/RightCard/InfoTab"]
+layout_mode = 2
