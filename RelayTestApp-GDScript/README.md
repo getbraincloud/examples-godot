@@ -34,13 +34,9 @@ After installing, enable the plugin: **Project → Project Settings → Plugins 
 
 ### 2. Enter your app credentials
 
-The brainCloud plugin includes an editor configuration window. With the project open in Godot, go to:
+The brainCloud plugin adds a **brainCloud** dock (usually docked on the right side of the editor). Open it and either log in with your brainCloud account to pick an app, or fill in your **App ID** and **App Secret** directly, then click **Save**.
 
-**Project → Tools → brainCloud Config...**
-
-Fill in your **App ID**, **App Secret**, and **Server URL** from the [brainCloud Portal](https://portal.braincloudservers.com/), then click **Save**. Credentials are stored in `project.godot` under `braincloud/config/*` and can also be edited directly via **Project → Project Settings → braincloud**.
-
-> **Security note:** `project.godot` is committed to version control by default. Add it to `.gitignore`, or use `Scripts/Ids.gd` as a git-ignored override file — the app reads project settings first and falls back to `Ids.gd` if a setting is empty.
+Credentials are saved into `addons/braincloud/braincloud.cfg`, encoded rather than stored as plain text, and are read automatically by `BrainCloudWrapper.init()`. That file is gitignored by the plugin itself the first time you save.
 
 The plugin window also includes quick links to the Portal, API Reference, documentation, and the GDScript SDK on GitHub.
 
@@ -82,7 +78,6 @@ Press **Run** (F5) in Godot. The app launches at 1280×720.
 ```
 RelayTestApp-GDScript/
 ├── Scripts/
-│   ├── Ids.gd                    ← App credentials (edit this)
 │   ├── AppState.gd               ← Shared runtime state (autoload)
 │   ├── BrainCloudBootstrap.gd    ← SDK initialisation (autoload)
 │   ├── Main.gd                   ← Screen orchestrator + relay/RTT lifecycle

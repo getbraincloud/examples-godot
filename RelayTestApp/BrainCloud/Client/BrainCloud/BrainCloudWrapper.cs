@@ -78,7 +78,6 @@ public class BrainCloudWrapper
     private static BrainCloudWrapper _instance = null;
 
     private string _lastUrl = "";
-    private string _lastSecretKey = "";
     private string _lastAppId = "";
     private string _lastAppVersion = "";
 
@@ -390,11 +389,12 @@ public class BrainCloudWrapper
     public void Init()
     {
         resetWrapper();
-        Init(
-            BrainCloud.Plugin.Interface.DispatcherURL,
-            BrainCloud.Plugin.Interface.AppSecret,
-            BrainCloud.Plugin.Interface.AppId,
-            BrainCloud.Plugin.Interface.AppVersion);
+        BrainCloud.Plugin.Interface.ApplyProfile(secret =>
+            Init(
+                BrainCloud.Plugin.Interface.DispatcherURL,
+                secret,
+                BrainCloud.Plugin.Interface.AppId,
+                BrainCloud.Plugin.Interface.AppVersion));
 
         Client.EnableLogging(BrainCloud.Plugin.Interface.EnableLogging);
     }
@@ -406,11 +406,12 @@ public class BrainCloudWrapper
     public void InitWithApps()
     {
         resetWrapper();
-        InitWithApps(
-            BrainCloud.Plugin.Interface.DispatcherURL,
-            BrainCloud.Plugin.Interface.AppId,
-            BrainCloud.Plugin.Interface.AppIdSecrets,
-            BrainCloud.Plugin.Interface.AppVersion);
+        BrainCloud.Plugin.Interface.ApplyProfiles(appIdSecrets =>
+            InitWithApps(
+                BrainCloud.Plugin.Interface.DispatcherURL,
+                BrainCloud.Plugin.Interface.AppId,
+                appIdSecrets,
+                BrainCloud.Plugin.Interface.AppVersion));
 
         Client.EnableLogging(BrainCloud.Plugin.Interface.EnableLogging);
     }
@@ -421,38 +422,44 @@ public class BrainCloudWrapper
     /// Initializes brainCloud using credentials saved by the brainCloud editor plugin's login
     /// flow (addons/braincloud/braincloud.cfg), falling back to ProjectSettings for projects
     /// that haven't logged into the plugin dock yet. Mirrors the Unity SDK's parameterless
-    /// Init() above, which reads the Unity Settings window plugin data instead. If neither
-    /// source has credentials this does nothing (Client.Initialized stays false) — callers
-    /// should fall back to Init(url, secretKey, appId, version) with their own parameters
-    /// (e.g. a generated ids file) in that case.
+    /// Init() above. If no source has credentials this does nothing (Client.Initialized stays
+    /// false) — callers should fall back to Init(url, secretKey, appId, version) with their
+    /// own parameters in that case.
     /// </summary>
     public void Init()
     {
-        string appId = "";
-        string appSecret = "";
+        // Godot doesn't generate a strongly-typed C# binding for a GDExtension class like it
+        // does for its own built-in API, so this is called dynamically rather than via
+        // `new BrainCloudNative()` -- there is no such compile-time type.
+        var native = Godot.ClassDB.Instantiate("BrainCloudNative").AsGodotObject();
+        native.Call("resolve_config", "res://addons/braincloud/braincloud.cfg",
+            Godot.Callable.From((string appId, string appSecret) =>
+            {
+                string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
+                string serverUrl = Godot.ProjectSettings.GetSetting(
+                    "braincloud/config/server_url", "https://api.braincloudservers.com/dispatcherv2").AsString();
 
-        var creds = new Godot.ConfigFile();
-        if (creds.Load("res://addons/braincloud/braincloud.cfg") == Godot.Error.Ok)
-        {
-            appId = creds.GetValue("credentials", "app_id", "").AsString();
-            appSecret = creds.GetValue("credentials", "app_secret", "").AsString();
-        }
-        if (string.IsNullOrEmpty(appId))
-            appId = Godot.ProjectSettings.GetSetting("braincloud/config/app_id", "").AsString();
-        if (string.IsNullOrEmpty(appSecret))
-            appSecret = Godot.ProjectSettings.GetSetting("braincloud/config/app_secret", "").AsString();
-        if (string.IsNullOrEmpty(appId) || string.IsNullOrEmpty(appSecret))
-            return;
+                Init(serverUrl, appSecret, appId, appVersion);
 
-        string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
-        string serverUrl = Godot.ProjectSettings.GetSetting(
-            "braincloud/config/server_url", "https://api.braincloudservers.com/dispatcherv2").AsString();
+                Client.EnableLogging(Godot.ProjectSettings.GetSetting("braincloud/debug/enable_logging", false).AsBool());
+                Client.EnableCompressedRequests(
+                    Godot.ProjectSettings.GetSetting("braincloud/config/enable_compression", true).AsBool());
+            }));
+    }
+#endif
 
-        Init(serverUrl, appSecret, appId, appVersion);
-
-        Client.EnableLogging(Godot.ProjectSettings.GetSetting("braincloud/debug/enable_logging", false).AsBool());
-        Client.EnableCompressedRequests(
-            Godot.ProjectSettings.GetSetting("braincloud/config/enable_compression", true).AsBool());
+#if DOT_NET
+    /// <summary>
+    /// Initializes brainCloud using credentials from a local braincloud.cfg file next to the
+    /// executable (written by BrainCloudNative's local dev tool). Mirrors the Unity/Godot SDKs'
+    /// parameterless Init() above. If no config is found this does nothing (Client.Initialized
+    /// stays false) — callers should fall back to Init(url, secretKey, appId, version) with
+    /// their own parameters in that case.
+    /// </summary>
+    public void Init()
+    {
+        BrainCloud.Native.NativeConfig.UseConfig(BrainCloud.Native.NativeConfig.DefaultPath,
+            (appId, secret, serverUrl, version) => Init(serverUrl, secret, appId, version));
     }
 #endif
 
@@ -468,7 +475,6 @@ public class BrainCloudWrapper
     {
         resetWrapper();
         _lastUrl = url;
-        _lastSecretKey = secretKey;
         _lastAppId = appId;
         _lastAppVersion = version;
         Client.Initialize(url, secretKey, appId, version);
@@ -488,7 +494,6 @@ public class BrainCloudWrapper
     {
         resetWrapper();
         _lastUrl = url;
-        _lastSecretKey = appIdSecretMap[defaultAppId];
         _lastAppId = defaultAppId;
         _lastAppVersion = version;
         Client.InitializeWithApps(url, defaultAppId, appIdSecretMap, version);
@@ -2735,7 +2740,10 @@ public class BrainCloudWrapper
     /// </summary>
     protected virtual void Reauthenticate()
     {
-        Init(_instance._lastUrl, _instance._lastSecretKey, _instance._lastAppId, _instance._lastAppVersion);
+        // Read the secret from the current (not-yet-rebuilt) Comms before Init() below calls
+        // resetWrapper() and replaces Client/Comms — BrainCloudComms is the sole holder of the
+        // secret, so this is the only place it needs to be read from.
+        Init(_instance._lastUrl, _instance.Client.Comms.RefreshDispatcherUrl(), _instance._lastAppId, _instance._lastAppVersion);
         string authType = GetStoredAuthenticationType();
         if (authType == AUTHENTICATION_ANONYMOUS)
         {

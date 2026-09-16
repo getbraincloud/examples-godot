@@ -276,16 +276,18 @@ public partial class Main : Node
 		// Display loading screen
 		LoadScene("Initializing brainCloud");
 		
-		// Initialize brainCloud. Try the editor plugin's saved credentials
-		// (addons/braincloud/braincloud.cfg) first; fall back to the generated Ids
-		// class if that didn't find anything to initialize with.
+		// Initialize brainCloud from the editor plugin's saved credentials
+		// (addons/braincloud/braincloud.cfg).
 		_brainCloudWrapper = new BrainCloudWrapper();
 		_brainCloudWrapper.Init();
-		
+
 		// Persistent version overlay (always visible, every screen) — App + brainCloud client version.
 		var versionOverlay = GetNodeOrNull<Label>("VersionOverlay");
 		if (versionOverlay != null)
-			versionOverlay.Text = $"App: {Ids._version}  |  Client: {BrainCloud.Version.GetVersion()}";
+		{
+			string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
+			versionOverlay.Text = $"App: {appVersion}  |  Client: {BrainCloud.Version.GetVersion()}";
+		}
 
 		if (!_brainCloudWrapper.Client.Initialized)
 		{

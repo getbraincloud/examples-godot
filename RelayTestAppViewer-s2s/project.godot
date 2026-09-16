@@ -14,7 +14,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="RelayTestApp Viewer (S2S)"
+config/name="Cursor Party Viewer (S2S)"
 config/description="Read-only S2S viewer for live CursorParty/RelayTestApp lobbies + leaderboard"
 run/main_scene="res://Scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
