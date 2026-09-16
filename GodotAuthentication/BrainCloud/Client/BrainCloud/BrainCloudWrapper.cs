@@ -428,11 +428,7 @@ public class BrainCloudWrapper
     /// </summary>
     public void Init()
     {
-        // Godot doesn't generate a strongly-typed C# binding for a GDExtension class like it
-        // does for its own built-in API, so this is called dynamically rather than via
-        // `new BrainCloudNative()` -- there is no such compile-time type.
-        var native = Godot.ClassDB.Instantiate("BrainCloudNative").AsGodotObject();
-        native.Call("resolve_config", "res://addons/braincloud/braincloud.cfg",
+        new BrainCloudNative().ResolveConfig("res://addons/braincloud/braincloud.cfg",
             Godot.Callable.From((string appId, string appSecret) =>
             {
                 string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
