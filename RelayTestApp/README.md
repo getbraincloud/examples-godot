@@ -8,4 +8,4 @@ It is a simple "game" in which players can view each other's mouse movement and 
 
 It's also cross-platform! Check out the web-based version here: [React RelayTestApp](http://ec2-18-219-26-183.us-east-2.compute.amazonaws.com:3004/)
 
-Enter your App ID and App Secret in the `Scripts/Ids.cs` file to run the project.
+Open the "brainCloud" dock in the Godot editor and log in to configure your App ID and App Secret — they're saved (encoded) into `addons/braincloud/braincloud.cfg`, which `BrainCloudWrapper.Init()` reads automatically.

@@ -25,10 +25,6 @@ config/icon="res://Art/logobc-app-icon-rounded_crop.png"
 
 brainCloud="*uid://ci8ugqmhpaq6t"
 
-[braincloud]
-
-config/server_url="https://api.internal.braincloudservers.com/dispatcherv2"
-
 [display]
 
 window/size/viewport_width=1920
