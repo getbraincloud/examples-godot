@@ -389,10 +389,10 @@ public class BrainCloudWrapper
     public void Init()
     {
         resetWrapper();
-        BrainCloud.Plugin.Interface.ApplyProfile(secret =>
+        BrainCloud.Plugin.Interface.ApplySigningProfile(profile =>
             Init(
                 BrainCloud.Plugin.Interface.DispatcherURL,
-                secret,
+                profile,
                 BrainCloud.Plugin.Interface.AppId,
                 BrainCloud.Plugin.Interface.AppVersion));
 
@@ -428,14 +428,18 @@ public class BrainCloudWrapper
     /// </summary>
     public void Init()
     {
-        new BrainCloudNative().ResolveConfig("res://addons/braincloud/braincloud.cfg",
-            Godot.Callable.From((string appId, string appSecret) =>
+        // Godot doesn't generate a strongly-typed C# binding for a GDExtension class like it
+        // does for its own built-in API, so this is called dynamically rather than via
+        // `new BrainCloudNative()` -- there is no such compile-time type.
+        var native = Godot.ClassDB.Instantiate("BrainCloudNative").AsGodotObject();
+        native.Call("resolve_config", "res://addons/braincloud/braincloud.cfg",
+            Godot.Callable.From((string appId, Godot.Callable sign) =>
             {
                 string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
                 string serverUrl = Godot.ProjectSettings.GetSetting(
                     "braincloud/config/server_url", "https://api.braincloudservers.com/dispatcherv2").AsString();
 
-                Init(serverUrl, appSecret, appId, appVersion);
+                Init(serverUrl, payloadBytes => sign.Call(payloadBytes).AsString(), appId, appVersion);
 
                 Client.EnableLogging(Godot.ProjectSettings.GetSetting("braincloud/debug/enable_logging", false).AsBool());
                 Client.EnableCompressedRequests(
@@ -455,7 +459,7 @@ public class BrainCloudWrapper
     public void Init()
     {
         BrainCloud.Native.NativeConfig.UseConfig(BrainCloud.Native.NativeConfig.DefaultPath,
-            (appId, secret, serverUrl, version) => Init(serverUrl, secret, appId, version));
+            (appId, signRequest, serverUrl, version) => Init(serverUrl, signRequest, appId, version));
     }
 #endif
 
@@ -474,6 +478,22 @@ public class BrainCloudWrapper
         _lastAppId = appId;
         _lastAppVersion = version;
         Client.Initialize(url, secretKey, appId, version);
+
+        LoadData();
+    }
+
+    /// <summary>Initialize the brainCloud client with a signing profile instead of a secret.</summary>
+    /// <param name="url">The brainCloud server url</param>
+    /// <param name="appProfile">Signs a given payload</param>
+    /// <param name="appId">The app's id</param>
+    /// <param name="version">The app's version</param>
+    public void Init(string url, Func<byte[], string> appProfile, string appId, string version)
+    {
+        resetWrapper();
+        _lastUrl = url;
+        _lastAppId = appId;
+        _lastAppVersion = version;
+        Client.Initialize(url, appProfile, appId, version);
 
         LoadData();
     }
@@ -2736,10 +2756,8 @@ public class BrainCloudWrapper
     /// </summary>
     protected virtual void Reauthenticate()
     {
-        // Read the secret from the current (not-yet-rebuilt) Comms before Init() below calls
-        // resetWrapper() and replaces Client/Comms — BrainCloudComms is the sole holder of the
-        // secret, so this is the only place it needs to be read from.
-        Init(_instance._lastUrl, _instance.Client.Comms.RefreshDispatcherUrl(), _instance._lastAppId, _instance._lastAppVersion);
+        // Grab the profile before Init() rebuilds Client/Comms.
+        Init(_instance._lastUrl, _instance.Client.Comms.GetAppProfile(), _instance._lastAppId, _instance._lastAppVersion);
         string authType = GetStoredAuthenticationType();
         if (authType == AUTHENTICATION_ANONYMOUS)
         {
