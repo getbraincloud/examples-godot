@@ -4,7 +4,13 @@ This repository contains example Godot projects that make use of the [brainCloud
 
 These projects are meant to be used as code examples and references. Feel free to use our code as an example for your own code.
 
-Note: These projects will not work outside of the box without proper set-up of a brainCloud app.
+## Connect your app
+
+Each project reads its brainCloud app from the **brainCloud** editor plugin:
+
+1. Open the project and enable the plugin: **Project → Project Settings → Plugins → brainCloud**.
+2. In the **brainCloud** dock, log in and pick your team and app (or create one).
+3. The plugin writes `addons/braincloud/braincloud.cfg` (gitignored), which the examples read with `Init()` (C#) / `init()` (GDScript). No app ID or secret in the code.
 
 For more help getting started with brainCloud in Godot, take a look at the **Godot Authentication example**, or view the guide in the [C# library](https://github.com/getbraincloud/braincloud-csharp/tree/develop#getting-started-with-godot-c-only).
 

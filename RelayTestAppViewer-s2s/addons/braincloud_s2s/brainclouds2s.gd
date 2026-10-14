@@ -42,6 +42,13 @@ var _retry_count: int = 0
 var _busy: bool = false
 var _heartbeat_timer: Timer = null
 
+# Keep-alive transport. 
+var _http: HTTPClient = null
+var _http_host: String = ""
+var _http_port: int = -1
+var _http_tls: bool = false
+var _http_path: String = "/"
+
 var _global_file_v3: BrainCloudS2SGlobalFileV3 = null
 var _rtt: BrainCloudS2SRTT = null
 var _chat: BrainCloudS2SChat = null
@@ -135,6 +142,7 @@ func disable_rtt() -> void:
 
 func disconnect_context() -> void:
 	_stop_heartbeat()
+	_http_close()
 	if _rtt != null:
 		_rtt.disable()
 	_state = State.DISCONNECTED
@@ -241,28 +249,12 @@ func _post(packet: Dictionary) -> Dictionary:
 	if _log_enabled:
 		print("[S2S SEND %s] %s" % [_app_id, body if _show_secret_logs else redact(body)])
 
-	var http := HTTPRequest.new()
-	add_child(http)
-
 	var headers := PackedStringArray(["Content-Type: application/json"])
-	var request_err := http.request(_url, headers, HTTPClient.METHOD_POST, body)
-	if request_err != OK:
-		http.queue_free()
-		if _log_enabled:
-			print("[S2S Error making request %s] HTTPRequest.request() failed: %d" % [_app_id, request_err])
+	var text := await _send_over_shared_connection(headers, body.to_utf8_buffer(), true)
+	if text.is_empty():
+		# Either a transport failure (already logged) or a genuinely empty body; both
+		# end up as an empty result below.
 		return {}
-
-	var completed: Array = await http.request_completed
-	var result: int = completed[0]
-	var response_body: PackedByteArray = completed[3]
-	http.queue_free()
-
-	if result != HTTPRequest.RESULT_SUCCESS:
-		if _log_enabled:
-			print("[S2S Error making request %s] HTTPRequest result: %d" % [_app_id, result])
-		return {}
-
-	var text := response_body.get_string_from_utf8()
 
 	if _log_enabled:
 		print("[S2S RECV %s] %s" % [_app_id, text if _show_secret_logs else redact(text)])
@@ -278,6 +270,99 @@ func _post(packet: Dictionary) -> Dictionary:
 
 	return json.get_data()
 
+# ── Keep-alive transport ────────────────────────────────────────────────────
+
+func _http_parse_url() -> void:
+	_http_tls = _url.begins_with("https://")
+	var rest := _url
+	var scheme_end := _url.find("://")
+	if scheme_end >= 0:
+		rest = _url.substr(scheme_end + 3)
+	var slash := rest.find("/")
+	var host_port := rest if slash < 0 else rest.substr(0, slash)
+	_http_path = "/" if slash < 0 else rest.substr(slash)
+	_http_port = 443 if _http_tls else 80
+	var colon := host_port.rfind(":")
+	if colon > 0:
+		_http_port = int(host_port.substr(colon + 1))
+		host_port = host_port.substr(0, colon)
+	_http_host = host_port
+
+func _http_close() -> void:
+	if _http != null:
+		_http.close()
+
+# Returns true once the shared connection is usable. Reuses the existing socket when
+# one is already open, which is the entire point.
+func _http_connect() -> bool:
+	var prev_host := _http_host
+	var prev_port := _http_port
+	_http_parse_url()
+	if _http != null and (_http_host != prev_host or _http_port != prev_port):
+		_http_close()
+	if _http == null:
+		_http = HTTPClient.new()
+	if _http.get_status() == HTTPClient.STATUS_CONNECTED:
+		return true
+
+	var tls_options: TLSOptions = TLSOptions.client() if _http_tls else null
+	var err := _http.connect_to_host(_http_host, _http_port, tls_options)
+	if err != OK:
+		if _log_enabled:
+			print("[S2S Error connecting %s] connect_to_host failed: %d" % [_app_id, err])
+		return false
+
+	while _http.get_status() == HTTPClient.STATUS_RESOLVING or _http.get_status() == HTTPClient.STATUS_CONNECTING:
+		_http.poll()
+		await get_tree().process_frame
+
+	if _http.get_status() != HTTPClient.STATUS_CONNECTED:
+		if _log_enabled:
+			print("[S2S Error connecting %s] status=%d" % [_app_id, _http.get_status()])
+		_http_close()
+		return false
+	return true
+
+# One request over the shared connection. `allow_retry` covers the normal case of the
+# server having reaped an idle keep-alive socket between calls: that is routine, not an
+# error, so it reconnects and sends once more before giving up.
+func _send_over_shared_connection(headers: PackedStringArray, body_bytes: PackedByteArray, allow_retry: bool) -> String:
+	if not await _http_connect():
+		return ""
+
+	var err := _http.request_raw(HTTPClient.METHOD_POST, _http_path, headers, body_bytes)
+	if err != OK:
+		_http_close()
+		if allow_retry:
+			return await _send_over_shared_connection(headers, body_bytes, false)
+		if _log_enabled:
+			print("[S2S Error making request %s] request_raw failed: %d" % [_app_id, err])
+		return ""
+
+	while _http.get_status() == HTTPClient.STATUS_REQUESTING:
+		_http.poll()
+		await get_tree().process_frame
+
+	if not _http.has_response():
+		# Socket went away before any headers arrived - almost always a reaped idle
+		# keep-alive connection.
+		_http_close()
+		if allow_retry:
+			return await _send_over_shared_connection(headers, body_bytes, false)
+		if _log_enabled:
+			print("[S2S Error making request %s] no response (status=%d)" % [_app_id, _http.get_status()])
+		return ""
+
+	var chunks := PackedByteArray()
+	while _http.get_status() == HTTPClient.STATUS_BODY:
+		_http.poll()
+		var chunk := _http.read_response_body_chunk()
+		if chunk.size() > 0:
+			chunks.append_array(chunk)
+		else:
+			await get_tree().process_frame
+
+	return chunks.get_string_from_utf8()
 func _start_heartbeat() -> void:
 	_stop_heartbeat()
 	_heartbeat_timer = Timer.new()

@@ -59,3 +59,11 @@ horizontal_alignment = 2
 clip_text = true
 theme_override_font_sizes/font_size = 13
 theme_override_colors/font_color = Color(0.65, 0.65, 0.65, 1)
+
+[node name="RankLabel" type="Label" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(72, 0)
+text = "Unranked"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 1)

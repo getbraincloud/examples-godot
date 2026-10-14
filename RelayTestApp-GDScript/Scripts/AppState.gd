@@ -33,6 +33,9 @@ var my_color_index: int = 0
 # call, until the server echoes it back via MEMBER_UPDATE.
 var user_is_ready: bool = false
 
+# Own rank on the coverage lifetime board, shared via lobby extra["rank"] (-1 = unranked/unknown).
+var worldwide_rank: int = -1
+
 var server_info: Dictionary = {}
 var my_net_id: int = -1
 

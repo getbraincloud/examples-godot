@@ -238,6 +238,7 @@ public partial class LobbyScreen : Control
             int colourIndex = (int)extra["colorIndex"];
             bool userIsHost = memberCxId == lobbyOwnerCxId;
             bool isReady = lobbyMember.ContainsKey("isReady") && Convert.ToBoolean(lobbyMember["isReady"]);
+            int rank = extra.ContainsKey("rank") && extra["rank"] != null ? Convert.ToInt32(extra["rank"]) : -1;
 
             var lobbyMemberScene = GD.Load<PackedScene>("res://Scenes/LobbyMember.tscn");
             LobbyMember newLobbyMember = (LobbyMember)lobbyMemberScene.Instantiate();
@@ -252,6 +253,7 @@ public partial class LobbyScreen : Control
             newLobbyMember.SetCxId(memberCxId);
             newLobbyMember.SetIsMe(memberCxId == _localCxId);
             newLobbyMember.SetReady(isReady);
+            newLobbyMember.SetRank(rank);
             newLobbyMember.Connect(LobbyMember.SignalName.ColourSwatchClicked, Callable.From(() => OnColourSwatchClicked(newLobbyMember)));
         }
 

@@ -10,9 +10,8 @@ This project uses a script called **BCManager.cs** to define and create brainClo
 
 ## Getting Started
 
-1. Create a new app in the [brainCloud server portal](https://portal.braincloudservers.com/) and take note of the application IDs at Design > Core App Info > Application IDs
-2. Open the project in the Godot editor
-    - In the **BCManager.cs** script, replace the `_secretKey` and `_appId` values with the ones from the newly created app
+1. Open the project in the Godot editor and enable the plugin: **Project → Project Settings → Plugins → brainCloud**.
+2. In the **brainCloud** dock, log in and pick your app (or create one). It saves your app to `addons/braincloud/braincloud.cfg` (gitignored), which **BCManager.cs** reads with `_brainCloudWrapper.Init()`. No app ID or secret in the code.
     - When building the app in the Godot Editor, there may be "duplicate attribute" errors in the **AssemblyInfo.cs** file. If this happens, comment out, or delete the duplicated lines that have been highlighted as errors, and the project should build successfully. 
 3. The project should now be ready to run. Ensure that **main.tscn** has been set as the main scene, and then click **Run Project** to explore brainCloud.
 

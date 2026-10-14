@@ -14,6 +14,7 @@ signal color_swatch_clicked
 @onready var _host_badge:  Label     = $HostBadge
 @onready var _ready_label: Label    = $ReadyLabel
 @onready var _ping_label:  Label     = $PingLabel
+@onready var _rank_label:  Label     = $RankLabel
 
 var cx_id: String = ""
 
@@ -32,6 +33,9 @@ func setup(member: Dictionary) -> void:
 	var extra: Dictionary = member.get("extra", {})
 	set_color_index(int(extra.get("colorIndex", 0)))
 	set_ready(member.get("isReady", false))
+	# null (not just missing) can arrive from other clients' JSON.
+	var rank = extra.get("rank", -1)
+	set_rank(int(rank) if rank != null else -1)
 
 	# Show the member's best reported region ping (from extra.pings shared via update_ready)
 	var pings: Dictionary = extra.get("pings", {})
@@ -53,6 +57,18 @@ func set_ready(is_ready: bool) -> void:
 	_name_label.modulate.a = 1.0 if is_ready else 0.55
 	_ready_label.text = "Ready" if is_ready else "Not Ready"
 	_ready_label.add_theme_color_override("font_color", Color(0.35, 1.0, 0.45) if is_ready else Color(0.6, 0.6, 0.6))
+
+func set_rank(rank: int) -> void:
+	_rank_label.text = ("#%d" % rank) if rank >= 0 else "Unranked"
+	_rank_label.add_theme_color_override("font_color", _rank_color(rank))
+
+# Matches cpp rankColorFor: gold/silver/bronze, white otherwise; dim grey when unranked.
+static func _rank_color(rank: int) -> Color:
+	if rank < 0: return Color(0.6, 0.6, 0.6)
+	if rank == 1: return Color(1.0, 0.84, 0.0)
+	if rank == 2: return Color(0.75, 0.75, 0.75)
+	if rank == 3: return Color(0.80, 0.50, 0.20)
+	return Color.WHITE
 
 func set_ping(ms: int) -> void:
 	# Match CPP: a timed-out region (>=999) shows "T/O"; unmeasured shows "--".
