@@ -17,7 +17,7 @@ extends Node
 ## before the first resolves waits its turn. This is a simpler equivalent of the explicit
 ## request queue the C++/Java/JS S2S SDKs keep, made possible by GDScript's coroutines.
 
-const S2S_VERSION := "1.0.0"
+const S2S_VERSION := "6.1.0"
 const DEFAULT_S2S_URL := "https://api.braincloudservers.com/s2sdispatcher"
 
 const SERVER_SESSION_EXPIRED := 40365
