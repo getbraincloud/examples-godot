@@ -92,7 +92,7 @@ func _fetch_if_needed() -> void:
 	var page_result: Dictionary = await AppState.bc.social_leaderboard_service.get_global_leaderboard_page(
 		leaderboard_id, "HIGH_TO_LOW", 0, 4)
 	var top: Array = []
-	if page_result.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(page_result):
 		for e in page_result.get("data", {}).get("leaderboard", []):
 			top.append(_parse_entry(e))
 	_merge_result(key, {"top": top})
@@ -101,7 +101,7 @@ func _fetch_if_needed() -> void:
 	var view_result: Dictionary = await AppState.bc.social_leaderboard_service.get_global_leaderboard_view(
 		leaderboard_id, "HIGH_TO_LOW", 0, 0)
 	var self_entry = null
-	if view_result.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(view_result):
 		var entries: Array = view_result.get("data", {}).get("leaderboard", [])
 		if entries.size() > 0:
 			self_entry = _parse_entry(entries[0])

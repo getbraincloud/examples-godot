@@ -119,7 +119,7 @@ func _apply_role() -> void:
 			AppState.user_is_ready = true
 			AppState.bc.lobby_service.update_ready(
 				AppState.lobby_id, true,
-				{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
+				{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data, "rank": AppState.worldwide_rank}
 			)
 		_ready_button.text = "Not Ready"
 
@@ -177,7 +177,7 @@ func _on_color_selected(index: int) -> void:
 
 	# Instant local feedback — the server echo (MEMBER_UPDATE) will confirm shortly after.
 	_update_member_row({"cxId": AppState.user_cx_id, "name": AppState.username, "isReady": AppState.user_is_ready,
-		"extra": {"colorIndex": index, "pings": AppState.ping_data}})
+		"extra": {"colorIndex": index, "pings": AppState.ping_data, "rank": AppState.worldwide_rank}})
 
 	var cfg := ConfigFile.new()
 	cfg.load("user://settings.cfg")
@@ -185,7 +185,7 @@ func _on_color_selected(index: int) -> void:
 	cfg.save("user://settings.cfg")
 	AppState.bc.lobby_service.update_ready(
 		AppState.lobby_id, AppState.user_is_ready,
-		{"colorIndex": index, "pings": AppState.ping_data}
+		{"colorIndex": index, "pings": AppState.ping_data, "rank": AppState.worldwide_rank}
 	)
 
 # ── Ready / Start / Leave ─────────────────────────────────────────────────────
@@ -199,14 +199,14 @@ func _on_ready_pressed() -> void:
 		_status_label.text = "Starting..."
 		AppState.bc.lobby_service.update_ready(
 			AppState.lobby_id, true,
-			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
+			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data, "rank": AppState.worldwide_rank}
 		)
 	else:
 		AppState.user_is_ready = not AppState.user_is_ready
 		_ready_button.text = "Not Ready" if AppState.user_is_ready else "Ready"
 		AppState.bc.lobby_service.update_ready(
 			AppState.lobby_id, AppState.user_is_ready,
-			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
+			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data, "rank": AppState.worldwide_rank}
 		)
 
 func _on_leave_pressed() -> void:

@@ -224,7 +224,7 @@ namespace BrainCloud.Internal
         private List<FileUploader> _fileUploads = new List<FileUploader>();
 
 #if DOT_NET || GODOT
-        private HttpClient _httpClient = new HttpClient(new NativeMessageHandler());
+        private static readonly HttpClient _httpClient = new HttpClient(new NativeMessageHandler());
 #endif
 
         // For handling local session errors
@@ -270,29 +270,17 @@ namespace BrainCloud.Internal
             _isAuthenticated = true;
         }
 
-        public Dictionary<string, string> AppIdSecretMap
-        {
-            get; private set;
-        }
+        // Per-appId signing profile: signs a payload without exposing the secret itself.
+        private Dictionary<string, Func<byte[], string>> _appProfiles = new Dictionary<string, Func<byte[], string>>();
 
         public string AppId
         {
             get; private set;
         }
 
-        public string SecretKey
+        internal Func<byte[], string> GetAppProfile()
         {
-            get
-            {
-                if (AppIdSecretMap.ContainsKey(AppId))
-                {
-                    return AppIdSecretMap[AppId];
-                }
-                else
-                {
-                    return "NO SECRET DEFINED FOR '" + AppId + "'";
-                }
-            }
+            return _appProfiles.TryGetValue(AppId, out var profile) ? profile : null;
         }
 
         public string SessionID
@@ -420,7 +408,6 @@ namespace BrainCloud.Internal
 #if DISABLE_SSL_CHECK
             ServicePointManager.ServerCertificateValidationCallback = AcceptAllCertifications;
 #endif
-            AppIdSecretMap = new Dictionary<string, string>();
             _clientRef = client;
             ResetErrorCache();
         }
@@ -433,6 +420,15 @@ namespace BrainCloud.Internal
         /// <param name="appId">AppId</param>
         /// <param name="secretKey">Secret key.</param>
         public void Initialize(string serverURL, string appId, string secretKey)
+        {
+            Initialize(serverURL, appId, payloadBytes => ComputeSignatureHash(payloadBytes, System.Text.Encoding.UTF8.GetBytes(secretKey)));
+        }
+
+        /// <summary>Initialize the communications library with a signing profile instead of a secret.</summary>
+        /// <param name="serverURL">Server URL.</param>
+        /// <param name="appId">AppId</param>
+        /// <param name="appProfile">Signs a given payload.</param>
+        public void Initialize(string serverURL, string appId, Func<byte[], string> appProfile)
         {
             ResetCommunication(); //resets comms, packetId and SessionId
             _expectedIncomingPacketId = JsonResponseBundleV2.NO_PACKET_EXPECTED;
@@ -454,7 +450,7 @@ namespace BrainCloud.Internal
             UploadURL = formatURL;
             UploadURL += @"/uploader";
 
-            AppIdSecretMap[appId] = secretKey;
+            _appProfiles[appId] = appProfile;
             AppId = appId;
 
             _blockingQueue = false;
@@ -469,10 +465,31 @@ namespace BrainCloud.Internal
         /// <param name="appIdSecretMap">map of appId -> secrets, to allow the client to safely switch between apps with secret being secure</param>
         public void InitializeWithApps(string serverURL, string defaultAppId, Dictionary<string, string> appIdSecretMap)
         {
-            AppIdSecretMap.Clear();
-            AppIdSecretMap = appIdSecretMap;
+            // Copy rather than alias the caller's dictionary — otherwise mutating it after
+            // this call silently changes the client's secrets out from under it.
+            foreach (var kv in appIdSecretMap)
+            {
+                string secretKey = kv.Value;
+                _appProfiles[kv.Key] = payloadBytes => ComputeSignatureHash(payloadBytes, System.Text.Encoding.UTF8.GetBytes(secretKey));
+            }
 
-            Initialize(serverURL, defaultAppId, AppIdSecretMap[defaultAppId]);
+            Initialize(serverURL, defaultAppId, _appProfiles[defaultAppId]);
+        }
+
+        /// <summary>
+        /// Initialize the communications library with a signing profile per app.
+        /// </summary>
+        /// <param name="serverURL">Server URL.</param>
+        /// <param name="defaultAppId">default appId </param>
+        /// <param name="appProfiles">map of appId -> signing profile, used when switching between apps</param>
+        public void InitializeWithApps(string serverURL, string defaultAppId, Dictionary<string, Func<byte[], string>> appProfiles)
+        {
+            foreach (var kv in appProfiles)
+            {
+                _appProfiles[kv.Key] = kv.Value;
+            }
+
+            Initialize(serverURL, defaultAppId, _appProfiles[defaultAppId]);
         }
 
         private Uri ValidateURL(string value)
@@ -1854,7 +1871,7 @@ namespace BrainCloud.Internal
             packet[OperationParam.ServiceMessageMessages] = requestState.MessageList;
 
             string jsonRequestString = SerializeJson(packet);
-            string sig = CalculateMD5Hash(jsonRequestString + SecretKey);
+            string sig = SignRequest(jsonRequestString);
 
             byte[] byteArray = Encoding.UTF8.GetBytes(jsonRequestString);
 
@@ -2275,21 +2292,39 @@ namespace BrainCloud.Internal
             }
         }
 
-        private string CalculateMD5Hash(string input)
+        internal string SignRequest(string jsonRequestString)
         {
+            byte[] payloadBytes = System.Text.Encoding.UTF8.GetBytes(jsonRequestString);
+            if (_appProfiles.TryGetValue(AppId, out var profile))
+                return profile(payloadBytes);
+            return ComputeSignatureHash(payloadBytes, System.Text.Encoding.UTF8.GetBytes("NO SECRET DEFINED FOR '" + AppId + "'"));
+        }
+
+        internal static string ComputeSignatureHash(byte[] payloadBytes, byte[] secretBytes)
+        {
+            byte[] hash;
+
 #if !(DOT_NET || GODOT)
-            MD5Unity.MD5 md5 = MD5Unity.MD5.Create();
-            byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(input); // UTF8, not ASCII
-            byte[] hash = md5.ComputeHash(inputBytes);
+            using (MD5Unity.MD5 md5 = MD5Unity.MD5.Create())
+            {
+                md5.TransformBlock(payloadBytes, 0, payloadBytes.Length, payloadBytes, 0);
+                md5.TransformFinalBlock(secretBytes, 0, secretBytes.Length);
+                hash = md5.Hash;
+            }
 #else
 #if UWP
-            Windows.Security.Cryptography.MD5 md5 = Windows.Security.Cryptography.MD5.Create();
+            using (Windows.Security.Cryptography.MD5 md5 = Windows.Security.Cryptography.MD5.Create())
 #else
-            System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
+            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
 #endif
-            byte[] inputBytes = System.Text.Encoding.UTF8.GetBytes(input); // UTF8, not ASCII
-            byte[] hash = md5.ComputeHash(inputBytes);
+            {
+                md5.TransformBlock(payloadBytes, 0, payloadBytes.Length, payloadBytes, 0);
+                md5.TransformFinalBlock(secretBytes, 0, secretBytes.Length);
+                hash = md5.Hash;
+            }
 #endif
+
+            Array.Clear(secretBytes, 0, secretBytes.Length);
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < hash.Length; i++)

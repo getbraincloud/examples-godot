@@ -64,6 +64,9 @@ public partial class Main : Node
 	private bool _matchmakingCancelled = false;
 	private bool _playing = false;
 	private string _lobbyID = null;
+	// Needed by CancelFindRequest to dequeue a cancelled matchmaking attempt server-side.
+	private string _lobbyType = null;
+	private string _matchmakingEntryId = null;
 	private Dictionary<string, object> _lobby = null;
 	private Dictionary<string, object> _server = null;
 	private List<Member> _matchMembers = new List<Member>();
@@ -157,6 +160,9 @@ public partial class Main : Node
 	private int _userColourIndex = 0;
 	private bool _userIsReady = false;
 	private bool _userWasPresentSinceStart = false;
+	// Coverage-board rank shared via lobby extra["rank"] (-1 = unranked); there's no API to look up anyone else's.
+	private int _worldwideRank = -1;
+	private bool _rankFetchInFlight = false;
 
 	// brainCloud data
 	private BrainCloudWrapper _brainCloudWrapper;
@@ -249,6 +255,9 @@ public partial class Main : Node
 	{
 		if(what == NotificationWMCloseRequest)
 		{
+			// App shutdown is a true logout too — tear down RTT here as well.
+			_brainCloudWrapper.RTTService.DeregisterAllRTTCallbacks();
+			_brainCloudWrapper.RTTService.DisableRTT();
 			_brainCloudWrapper.Logout(false);
 			GetTree().Quit(); // default behaviour
 		}
@@ -276,16 +285,18 @@ public partial class Main : Node
 		// Display loading screen
 		LoadScene("Initializing brainCloud");
 		
-		// Initialize brainCloud. Try the editor plugin's saved credentials
-		// (addons/braincloud/braincloud.cfg) first; fall back to the generated Ids
-		// class if that didn't find anything to initialize with.
+		// Initialize brainCloud from the editor plugin's saved credentials
+		// (addons/braincloud/braincloud.cfg).
 		_brainCloudWrapper = new BrainCloudWrapper();
 		_brainCloudWrapper.Init();
-		
+
 		// Persistent version overlay (always visible, every screen) — App + brainCloud client version.
 		var versionOverlay = GetNodeOrNull<Label>("VersionOverlay");
 		if (versionOverlay != null)
-			versionOverlay.Text = $"App: {Ids._version}  |  Client: {BrainCloud.Version.GetVersion()}";
+		{
+			string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
+			versionOverlay.Text = $"App: {appVersion}  |  Client: {BrainCloud.Version.GetVersion()}";
+		}
 
 		if (!_brainCloudWrapper.Client.Initialized)
 		{
@@ -344,16 +355,27 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// User cancelled the matchmaking search (Cancel button on the loading screen). Tears
-	/// down RTT/lobby state the same way a failed match attempt does and returns to the
-	/// lobby-select screen — mirrors GDScript's _on_cancel_search_pressed.
+	/// User cancelled the matchmaking search (Cancel button on the loading screen). Dequeues
+	/// the outstanding FindOrCreateLobby entry (and leaves the lobby if one was already
+	/// assigned) — mirrors GDScript's _on_cancel_search_pressed. RTT is not touched here.
 	/// </summary>
 	private void OnMatchmakingCancelRequested()
 	{
 		_matchmakingCancelled = true;
 		_matchmaking = false;
-		_brainCloudWrapper.RTTService.DeregisterRTTLobbyCallback();
-		_brainCloudWrapper.RTTService.DisableRTT();
+
+		// Otherwise this player stays a ghost member, blocking the all-ready rematch fast
+		// path for everyone else until the server times them out.
+		if (!string.IsNullOrEmpty(_matchmakingEntryId))
+		{
+			_brainCloudWrapper.LobbyService.CancelFindRequest(_lobbyType, _matchmakingEntryId);
+		}
+		if (!string.IsNullOrEmpty(_lobbyID))
+		{
+			_brainCloudWrapper.LobbyService.LeaveLobby(_lobbyID);
+		}
+
+		_matchmakingEntryId = null;
 		_lobbyID = null;
 		_lobby = null;
 		GoToLobbySelectScreen();
@@ -413,9 +435,56 @@ public partial class Main : Node
 		// immediately once this has already succeeded.
 		EnsureRttEnabled(() => { }, (status, reasonCode, jsonError) => { });
 
+		FetchWorldwideRank();
+
 		// Connect event listener(s)
 		_lobbySelectScreen.Connect(LobbySelectScreen.SignalName.LogOutRequested, new Callable(this, MethodName.OnLogOutRequested));
 		_lobbySelectScreen.Connect(LobbySelectScreen.SignalName.MatchMakingRequested, new Callable(this, MethodName.OnMatchMakingRequested));
+	}
+
+	/// <summary>
+	/// Fetch this player's own rank on the coverage board (self-centric view returns just our row).
+	/// </summary>
+	private void FetchWorldwideRank()
+	{
+		if (_rankFetchInFlight) return;
+		_rankFetchInFlight = true;
+
+		_brainCloudWrapper.SocialLeaderboardService.GetGlobalLeaderboardView(coverageLeaderboardId, BrainCloudSocialLeaderboard.SortOrder.HIGH_TO_LOW, 0, 0,
+			(jsonResponse, cbObject) =>
+			{
+				_rankFetchInFlight = false;
+				var response = JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+				var data = response.ContainsKey("data") ? response["data"] as Dictionary<string, object> : null;
+				int rank = -1;
+				if (data != null && data.ContainsKey("leaderboard") && data["leaderboard"] is object[] arr && arr.Length > 0
+					&& arr[0] is Dictionary<string, object> entry && entry.ContainsKey("rank"))
+				{
+					rank = Convert.ToInt32(entry["rank"]);
+				}
+				if (rank == _worldwideRank) return;
+				_worldwideRank = rank;
+				PushWorldwideRankIfInLobby();
+			},
+			(status, reasonCode, jsonError, cbObject) => { _rankFetchInFlight = false; });
+	}
+
+	/// <summary>
+	/// Re-send our member extra so lobby-mates see a changed rank right away.
+	/// </summary>
+	private void PushWorldwideRankIfInLobby()
+	{
+		if (string.IsNullOrEmpty(_lobbyID) || _lobby == null || !_lobby.ContainsKey("members")) return;
+
+		Dictionary<string, object> extraJSON = new Dictionary<string, object>
+		{
+			{ "colorIndex", _userColourIndex },
+			{ "rank", _worldwideRank },
+			{ "presentSinceStart", _userWasPresentSinceStart }
+		};
+		if (_pingData.Count > 0) extraJSON["pings"] = _pingData;
+
+		_brainCloudWrapper.LobbyService.UpdateReady(_lobbyID, _userIsReady, extraJSON);
 	}
 
 	/// <summary>
@@ -910,11 +979,15 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Attempt to log out of brainCloud and return to the Authentication Screen.
+	/// Attempt to log out of brainCloud and return to the Authentication Screen. This is a
+	/// true logout, so unlike leaving/rejoining a lobby, RTT is torn down here.
 	/// </summary>
 	private void OnLogOutRequested()
 	{
 		LoadScene("Logging out . . . ");
+
+		_brainCloudWrapper.RTTService.DeregisterAllRTTCallbacks();
+		_brainCloudWrapper.RTTService.DisableRTT();
 
 		SuccessCallback OnLogOutSuccess = (response, cbObject) =>
 		{
@@ -955,6 +1028,8 @@ public partial class Main : Node
 
 		_matchmakingStartMs = NowMs();
 		_matchmakingCancelled = false;
+		_lobbyType = lobbyType;
+		_matchmakingEntryId = null;
 
 		// Loading screen
 		LoadScene("Enabling RTT . . .");
@@ -986,6 +1061,7 @@ public partial class Main : Node
 			Dictionary<string, object> extraJSON = new Dictionary<string, object>
 			{
 				{ "colorIndex", _userColourIndex },
+				{ "rank", _worldwideRank },
 				{ "presentSinceStart", _userWasPresentSinceStart }
 			};
 
@@ -1013,6 +1089,16 @@ public partial class Main : Node
 			SuccessCallback OnFindOrCreateLobbySuccess = (jsonResponse, cbObject) =>
 			{
 				GD.Print(string.Format("FindOrCreateLobby Success:\n{0}", jsonResponse));
+
+				// Only a matchmaking-queue entryId comes back here — the lobby itself arrives
+				// later via OnLobbyEventReceived. Grab it so a Cancel can dequeue us.
+				Dictionary<string, object> findResponse = BrainCloud.JsonFx.Json.JsonReader.Deserialize<Dictionary<string, object>>(jsonResponse);
+				if (findResponse.TryGetValue("data", out object findData) && findData is Dictionary<string, object> findDataDict
+					&& findDataDict.TryGetValue("entryId", out object entryIdObj) && entryIdObj is string entryIdStr && !string.IsNullOrEmpty(entryIdStr))
+				{
+					_matchmakingEntryId = entryIdStr;
+				}
+
 				if (_matchmakingCancelled) return;
 
 				LoadScene("Joining lobby . . .", cancellable: true);
@@ -1159,6 +1245,7 @@ public partial class Main : Node
 					Dictionary<string, object> extraJSON = new Dictionary<string, object>
 					{
 						{ "colorIndex", _userColourIndex },
+						{ "rank", _worldwideRank },
 						{ "presentSinceStart", _userWasPresentSinceStart }
 					};
 
@@ -1255,8 +1342,6 @@ public partial class Main : Node
 			_brainCloudWrapper.RelayService.DeregisterRelayCallback();
 			_brainCloudWrapper.RelayService.DeregisterSystemCallback();
 			_brainCloudWrapper.RelayService.Disconnect();
-			_brainCloudWrapper.RTTService.DeregisterAllRTTCallbacks();
-			_brainCloudWrapper.RTTService.DisableRTT();
 
 			if (_lobbySelectScreen != null)
 			{
@@ -1592,7 +1677,7 @@ public partial class Main : Node
 					// pre-match ready state still was.
 					if (!string.IsNullOrEmpty(_lobbyID))
 					{
-						Dictionary<string, object> readyExtra = new Dictionary<string, object>() { { "colorIndex", _userColourIndex } };
+						Dictionary<string, object> readyExtra = new Dictionary<string, object>() { { "colorIndex", _userColourIndex }, { "rank", _worldwideRank } };
 						if (_pingData.Count > 0) readyExtra["pings"] = _pingData;
 						_brainCloudWrapper.LobbyService.UpdateReady(_lobbyID, false, readyExtra);
 					}
@@ -1619,6 +1704,7 @@ public partial class Main : Node
 		Dictionary<string, object> extraJSON = new Dictionary<string, object>
 		{
 			{ "colorIndex", colourIndex },
+			{ "rank", _worldwideRank },
 			{ "presentSinceStart", _userWasPresentSinceStart }
 		};
 
@@ -1627,7 +1713,8 @@ public partial class Main : Node
 	}
 
 	/// <summary>
-	/// Disconnect from Relay and RTT services, and return to the lobby select screen.
+	/// Leave the lobby and tear down the relay connection, then return to lobby select.
+	/// RTT is not touched here.
 	/// </summary>
 	private void OnLeaveLobbyRequested()
 	{
@@ -1645,8 +1732,6 @@ public partial class Main : Node
 		_brainCloudWrapper.RelayService.DeregisterRelayCallback();
 		_brainCloudWrapper.RelayService.DeregisterSystemCallback();
 		_brainCloudWrapper.RelayService.Disconnect();
-		_brainCloudWrapper.RTTService.DeregisterAllRTTCallbacks();
-		_brainCloudWrapper.RTTService.DisableRTT();
 
 		LoadScene("Returning to lobby select screen . . .");
 
@@ -1684,6 +1769,7 @@ public partial class Main : Node
 		Dictionary<string, object> extraJSON = new Dictionary<string, object>
 		{
 			{ "colorIndex", _userColourIndex },
+			{ "rank", _worldwideRank },
 			{ "presentSinceStart", _userWasPresentSinceStart }
 		};
 
@@ -1706,6 +1792,7 @@ public partial class Main : Node
 		Dictionary<string, object> extraJSON = new Dictionary<string, object>
 		{
 			{ "colorIndex", _userColourIndex },
+			{ "rank", _worldwideRank },
 			{ "presentSinceStart", _userWasPresentSinceStart }
 		};
 
@@ -1725,6 +1812,7 @@ public partial class Main : Node
 		Dictionary<string, object> extraJSON = new Dictionary<string, object>
 		{
 			{ "colorIndex", _userColourIndex },
+			{ "rank", _worldwideRank },
 			{ "presentSinceStart", _userWasPresentSinceStart }
 		};
 
@@ -2245,7 +2333,7 @@ public partial class Main : Node
 		_userIsReady = ready;
 		if (ready) GoToLobbyScreen();
 
-		Dictionary<string, object> extraJSON = new Dictionary<string, object> { { "colorIndex", _userColourIndex } };
+		Dictionary<string, object> extraJSON = new Dictionary<string, object> { { "colorIndex", _userColourIndex }, { "rank", _worldwideRank } };
 		if (_pingData.Count > 0) extraJSON["pings"] = _pingData;
 		_brainCloudWrapper.LobbyService.UpdateReady(_lobbyID, ready, extraJSON);
 	}

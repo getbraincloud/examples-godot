@@ -9,7 +9,7 @@ extends RefCounted
 # picker logic.
 
 signal state_changed
-signal app_selected(app_id: String, app_secret: String)
+signal app_selected(app_id: String, app_value: String)
 
 enum State { LOGGED_OUT, LOGGING_IN, LOGGED_IN }
 
@@ -19,6 +19,11 @@ const _SCOPE := "openid email builder_api team_info app_info team_read app_read 
 const _BUILDER_VERSION := "v1"
 const CREATE_NEW_APP_ID := ""
 
+# Editor-local only -- a user:// path is never packed into an exported game and never
+# part of the project's own file tree (so it can't end up committed to the SDK repo
+# either), unlike res://addons/braincloud/braincloud.cfg which ships with the game.
+const _SESSION_PATH := "user://braincloud_session.cfg"
+
 var state: int = State.LOGGED_OUT
 var email: String = ""
 var admin_id: String = ""
@@ -26,11 +31,11 @@ var access_token: String = ""
 var builder_api_key: String = ""
 var team_id: String = ""
 var teams: Array = []  # [{id, name, api_enabled}]
-var apps: Array = []   # [{id, name}] — includes a synthetic "-- Create New App --" (id == "")
-var templates: Array = []  # [{id, name}] — template apps, for "Create using Template"
+var apps: Array = []   # [{id, name, parent_app_id, is_parent, level_name}] — includes a synthetic "-- Create New App --" (id == "")
+var templates: Array = []  # [{id, name}] — template apps, for "Create using Tutorial template"
+var templates_loading: bool = false
 var error_message: String = ""
 
-var _creds_path: String = ""
 var _http_parent: Node = null
 var _base_host: String = ""
 var _oauth_server: BrainCloudOAuthServer = null
@@ -39,8 +44,7 @@ var _oauth_state: String = ""
 var _redirect_uri: String = ""
 
 
-func configure(creds_path: String, http_parent: Node) -> void:
-	_creds_path = creds_path
+func configure(http_parent: Node) -> void:
 	_http_parent = http_parent
 	_load_session()
 
@@ -336,9 +340,18 @@ func download_app_list(force: bool = false) -> void:
 		if response is Dictionary and response.get("apps") is Array:
 			for a in response["apps"]:
 				if a is Dictionary:
-					list.append({"id": str(a.get("appId", "")), "name": str(a.get("appName", ""))})
+					var parent_app_id = a.get("parentAppId")
+					var level_name = a.get("levelName")
+					var allow_parent = a.get("allowParentAssignment")
+					list.append({
+						"id": str(a.get("appId", "")),
+						"name": str(a.get("appName", "")),
+						"parent_app_id": str(parent_app_id) if parent_app_id != null else "",
+						"is_parent": allow_parent is bool and allow_parent,
+						"level_name": str(level_name) if level_name != null else "",
+					})
 		list.sort_custom(func(a, b): return a["name"].nocasecmp_to(b["name"]) < 0)
-		list.insert(0, {"id": CREATE_NEW_APP_ID, "name": "-- Create New App --"})
+		list.insert(0, {"id": CREATE_NEW_APP_ID, "name": "-- Create New App --", "parent_app_id": "", "is_parent": false, "level_name": ""})
 
 		apps = list
 		error_message = ""
@@ -346,13 +359,21 @@ func download_app_list(force: bool = false) -> void:
 	BrainCloudBuilderApi.get_app_list(_http_parent, config, team_id, on_complete)
 
 
-func download_template_list(force: bool = false) -> void:
-	if not templates.is_empty() and not force:
+const _TEMPLATE_ENGINE := "godot"
+
+func download_template_list(force: bool = false, engine: String = _TEMPLATE_ENGINE) -> void:
+	if (not templates.is_empty() or templates_loading) and not force and engine == _TEMPLATE_ENGINE:
 		return
+	templates_loading = true
 	var config := _builder_config()
 	var on_complete := func(success: bool, _code: int, _text: String, json):
 		if not success or not (json is Dictionary):
-			error_message = "Failed to fetch app templates."
+			if not engine.is_empty():
+				# Server without a "godot" template team yet: use the legacy default list.
+				download_template_list(true, "")
+				return
+			templates = []
+			templates_loading = false
 			state_changed.emit()
 			return
 
@@ -365,29 +386,56 @@ func download_template_list(force: bool = false) -> void:
 		list.sort_custom(func(a, b): return a["name"].nocasecmp_to(b["name"]) < 0)
 
 		templates = list
-		error_message = ""
+		templates_loading = false
 		state_changed.emit()
-	BrainCloudBuilderApi.get_template_app_list(_http_parent, config, on_complete)
+	BrainCloudBuilderApi.get_template_app_list(_http_parent, config, engine, on_complete)
 
 
 func select_app(app_id: String) -> void:
 	if app_id.is_empty():
 		return  # "-- Create New App --" sentinel — the dock shows the create-app UI instead
+	fetch_app_value(app_id, func(value: String): app_selected.emit(app_id, value))
+
+
+# Calls on_done(value) once fetched; errors land in error_message.
+func fetch_app_value(app_id: String, on_done: Callable) -> void:
 	var config := _builder_config()
 	var on_complete := func(success: bool, _code: int, _text: String, json):
 		if not success or not (json is Dictionary):
-			error_message = "Failed to fetch app secret."
+			error_message = "Failed to fetch app credentials."
 			state_changed.emit()
 			return
 		var response = json.get("response")
 		var app = response.get("app") if response is Dictionary else null
-		var secret := str(app.get("appSecret", "")) if app is Dictionary else ""
-		if secret.is_empty():
-			error_message = "App secret not found in response."
+		var value := str(app.get("appSecret", "")) if app is Dictionary else ""
+		if value.is_empty():
+			error_message = "App credentials not found in response."
 			state_changed.emit()
 			return
-		app_selected.emit(app_id, secret)
-	BrainCloudBuilderApi.get_app_secret(_http_parent, config, team_id, app_id, on_complete)
+		on_done.call(value)
+	BrainCloudBuilderApi.get_app_credentials(_http_parent, config, team_id, app_id, on_complete)
+
+
+func find_app(app_id: String) -> Dictionary:
+	for a in apps:
+		if a["id"] == app_id:
+			return a
+	return {}
+
+
+# Apps linked to parent_id in the portal.
+func child_apps_of(parent_id: String) -> Array:
+	var children: Array = []
+	if parent_id.is_empty():
+		return children
+	for a in apps:
+		if a.get("parent_app_id", "") == parent_id:
+			children.append(a)
+	return children
+
+
+func is_child_of(child_id: String, parent_id: String) -> bool:
+	return not parent_id.is_empty() and find_app(child_id).get("parent_app_id", "") == parent_id
 
 
 func create_app(app_name: String, platforms: Array, template_app_id: String = "") -> void:
@@ -456,28 +504,15 @@ func _base64_url(bytes: PackedByteArray) -> String:
 # developer stays logged in across editor restarts without re-authorizing.
 
 func _save_session() -> void:
-	if _creds_path.is_empty():
-		return
-	var cfg := ConfigFile.new()
-	cfg.load(_creds_path)  # preserve the [credentials] section already on disk
-	cfg.set_value("oauth", "access_token", access_token)
-	cfg.set_value("oauth", "email", email)
-	cfg.set_value("oauth", "admin_id", admin_id)
-	cfg.set_value("oauth", "team_id", team_id)
-	cfg.set_value("oauth", "builder_api_key", builder_api_key)
-	cfg.save(_creds_path)
+	BrainCloudNative.new().save_session(_SESSION_PATH, access_token, email, admin_id, team_id, builder_api_key)
 
 
 func _load_session() -> void:
-	if _creds_path.is_empty():
-		return
-	var cfg := ConfigFile.new()
-	if cfg.load(_creds_path) != OK:
-		return
-	access_token = str(cfg.get_value("oauth", "access_token", ""))
-	email = str(cfg.get_value("oauth", "email", ""))
-	admin_id = str(cfg.get_value("oauth", "admin_id", ""))
-	team_id = str(cfg.get_value("oauth", "team_id", ""))
-	builder_api_key = str(cfg.get_value("oauth", "builder_api_key", ""))
+	var result: Dictionary = BrainCloudNative.new().resolve_session(_SESSION_PATH)
+	access_token = str(result.get("access_token", ""))
+	email = str(result.get("email", ""))
+	admin_id = str(result.get("admin_id", ""))
+	team_id = str(result.get("team_id", ""))
+	builder_api_key = str(result.get("builder_api_key", ""))
 	if not access_token.is_empty() and not builder_api_key.is_empty():
 		state = State.LOGGED_IN

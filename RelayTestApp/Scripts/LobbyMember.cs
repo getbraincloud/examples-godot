@@ -18,6 +18,9 @@ public partial class LobbyMember : HBoxContainer
     // "Ready" / "Not ready" status line.
     private Label _readyLabel;
 
+    // Worldwide coverage rank, right-aligned. Hidden unless SetRank is called (lobby screen only).
+    private Label _rankLabel;
+
     // Colour swatch — clickable ONLY on your own row (cpp: ColorButton opens a popup picker
     // on your row only; react: canPickColor = isMe). Other members' swatches are display-only.
     private Button _colourButton;
@@ -33,6 +36,7 @@ public partial class LobbyMember : HBoxContainer
         _hostBadge = GetNode<Label>("HostBadge");
         _youBadge = GetNode<Label>("YouBadge");
         _readyLabel = GetNode<Label>("ReadyLabel");
+        _rankLabel = GetNode<Label>("RankLabel");
         _colourButton = GetNode<Button>("ColorButton");
         _colourRect = GetNode<ColorRect>("ColorButton/ColorRect");
 
@@ -70,6 +74,23 @@ public partial class LobbyMember : HBoxContainer
     {
         _readyLabel.Text = isReady ? "Ready" : "Not ready";
         _readyLabel.AddThemeColorOverride("font_color", isReady ? new Color(0.4f, 1f, 0.4f) : new Color(0.6f, 0.6f, 0.6f));
+    }
+
+    /// <summary>
+    /// Show "#rank" (gold/silver/bronze for top 3) or "Unranked" when rank &lt; 0.
+    /// </summary>
+    public void SetRank(int rank)
+    {
+        Color colour;
+        if (rank < 0) colour = new Color(0.6f, 0.6f, 0.6f);
+        else if (rank == 1) colour = new Color(1.0f, 0.84f, 0.0f);
+        else if (rank == 2) colour = new Color(0.75f, 0.75f, 0.75f);
+        else if (rank == 3) colour = new Color(0.80f, 0.50f, 0.20f);
+        else colour = new Color(1f, 1f, 1f);
+
+        _rankLabel.Text = rank < 0 ? "Unranked" : $"#{rank}";
+        _rankLabel.AddThemeColorOverride("font_color", colour);
+        _rankLabel.Show();
     }
 
     /// <summary>

@@ -21,7 +21,7 @@ func _try_reauthenticate() -> void:
 	_set_busy(true)
 	_status_label.text = "Reconnecting..."
 	var response: Dictionary = await AppState.bc.reauthenticate()
-	if response.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(response):
 		AppState.username = _username_field.text
 		await _sync_player_name()
 		await _load_global_properties()
@@ -41,7 +41,7 @@ func _on_login_pressed() -> void:
 	_status_label.text = "Logging in..."
 
 	var response: Dictionary = await AppState.bc.authenticate_universal(username, password, true)
-	if response.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(response):
 		AppState.username = username
 		_save_credentials(username, password)
 		await _sync_player_name()
@@ -59,7 +59,7 @@ func _load_global_properties() -> void:
 		 "PointsLeaderboardId", "PointsLeaderboardIdQuarterly",
 		 "CoverageLeaderboardId", "CoverageLeaderboardIdQuarterly"]
 	)
-	if response.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(response):
 		return
 	var data: Dictionary = response.get("data", {})
 
@@ -127,7 +127,7 @@ func _load_global_properties() -> void:
 func _sync_player_name() -> void:
 	var resp: Dictionary = await AppState.bc.player_state_service.read_player_state()
 	var server_name := ""
-	if resp.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(resp):
 		server_name = str(resp.get("data", {}).get("playerName", "")).strip_edges()
 	if server_name.is_empty():
 		if not AppState.username.strip_edges().is_empty():

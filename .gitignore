@@ -2,10 +2,10 @@
 RelayTestApp/Scripts/Ids.cs
 RelayTestApp/build/ids.txt
 .claude/settings.json
-/RelayTestApp-GDScript/.godot/editor
 /RelayTestApp-GDScript/build
 /RelayTestApp/build
-/RelayTestApp-GDScript/.godot/editor
-/RelayTestApp-GDScript/.godot/shader_cache
 GodotAuthentication/addons/braincloud/braincloud.cfg
 RelayTestApp/addons/braincloud/braincloud.cfg
+/RelayTestAppViewer-s2s/build
+/RelayTestApp-GDScript/.godot/
+**/CursorParty_*.zip

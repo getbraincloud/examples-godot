@@ -28,6 +28,8 @@ signal _async_done(result: Dictionary)
 var _rtt_enabling: bool = false
 signal _rtt_ready(result: Dictionary)
 
+var _rank_fetch_in_flight: bool = false
+
 # Non-host: throttle state for polling the GlobalEntity PostMatchResults.js writes (indexed
 # by "<lobbyId>:<round>") instead of waiting on a host relay broadcast — see
 # _tick_match_results_poll(). Reset whenever a new round's match result shows up.
@@ -74,6 +76,31 @@ func _show_screen(scene: PackedScene) -> void:
 	_current_screen = scene.instantiate()
 	_screen_container.add_child(_current_screen)
 	_wire_screen(_current_screen)
+	if scene == _MENU_SCENE:
+		_fetch_worldwide_rank()
+
+# Self-centric view (0/0) is the only way to get a rank, so each player fetches their own and
+# shares it via lobby extra["rank"]. A failed fetch keeps the last known rank.
+func _fetch_worldwide_rank() -> void:
+	if _rank_fetch_in_flight or AppState.coverage_leaderboard_id.is_empty():
+		return
+	_rank_fetch_in_flight = true
+	var result: Dictionary = await AppState.bc.social_leaderboard_service.get_global_leaderboard_view(
+		AppState.coverage_leaderboard_id, "HIGH_TO_LOW", 0, 0)
+	_rank_fetch_in_flight = false
+	if not BrainCloudWrapper.is_success(result):
+		return
+	var entries: Array = result.get("data", {}).get("leaderboard", [])
+	var rank: int = int(entries[0].get("rank", -1)) if entries.size() > 0 else -1
+	if rank == AppState.worldwide_rank:
+		return
+	AppState.worldwide_rank = rank
+	# Push it to lobby-mates now if we already joined while the fetch was in flight.
+	if not AppState.lobby_id.is_empty():
+		var extra := {"colorIndex": AppState.my_color_index, "rank": AppState.worldwide_rank}
+		if not AppState.ping_data.is_empty():
+			extra["pings"] = AppState.ping_data
+		AppState.bc.lobby_service.update_ready(AppState.lobby_id, AppState.user_is_ready, extra)
 
 func _wire_screen(screen: Control) -> void:
 	if screen.has_signal("authenticated"):
@@ -110,20 +137,20 @@ func _on_authenticated() -> void:
 # transition (state lives in AppState, not on the panel). Fire-and-forget from _on_authenticated.
 func _connect_global_chat() -> void:
 	var rtt_result: Dictionary = await _ensure_rtt_enabled()
-	if rtt_result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(rtt_result):
 		return
 	if not AppState.global_chat_channel_id.is_empty():
 		return # already connected (shouldn't normally be called twice, but stay idempotent)
 
 	var result: Dictionary = await AppState.bc.chat_service.get_channel_id("gl", "gl")
-	if result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(result):
 		return
 	var channel_id: String = result.get("data", {}).get("channelId", "")
 	if channel_id.is_empty():
 		return
 
 	var connect_result: Dictionary = await AppState.bc.chat_service.channel_connect(channel_id, 30)
-	if connect_result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(connect_result):
 		return
 	AppState.global_chat_channel_id = channel_id
 
@@ -194,7 +221,7 @@ func _on_matchmake_requested(lobby_type: String, protocol: String, use_ping: boo
 
 	_show_loading("Enabling real-time connection...")
 	var rtt_result := await _ensure_rtt_enabled()
-	if rtt_result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(rtt_result):
 		push_error("enable_rtt failed: ", rtt_result)
 		_hide_loading()
 		return
@@ -218,21 +245,24 @@ func _on_matchmake_requested(lobby_type: String, protocol: String, use_ping: boo
 	_lobby_search_start = 0
 	_in_lobby_search_step = false
 
+	# Captured even if we're about to treat this as cancelled, so a cancel that lands after
+	# the lobby was actually created still knows what to leave_lobby on.
+	if BrainCloudWrapper.is_success(lobby_result):
+		AppState.lobby_id = lobby_result.get("data", {}).get("id", "")
+
 	# Cancel button may have fired while we were awaiting — bail out if so.
 	if _search_cancelled:
 		return
 
 	_hide_loading()
-	if lobby_result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(lobby_result):
 		# Previously silent (straight back to the menu with no explanation, unlike cpp's
 		# errorAndReturnToMenu popup). push_error surfaces in the browser dev console (F12)
 		# on Web export, matching the react RelayTestApp's console.error on the same failure.
 		push_error("find_or_create_lobby failed: ", lobby_result)
-		_tear_down_rtt()
+		_clear_lobby_state()
 		_show_screen(_MENU_SCENE)
 		return
-
-	AppState.lobby_id = lobby_result.get("data", {}).get("id", "")
 
 	_show_screen(_LOBBY_SCENE)
 
@@ -241,7 +271,11 @@ func _on_cancel_search_pressed() -> void:
 	_cancel_btn.hide()
 	_lobby_search_start = 0
 	_in_lobby_search_step = false
-	_tear_down_rtt()
+	# The lobby may already exist server-side even though we never reached the Lobby screen —
+	# leave it cleanly, mirroring _on_leave_lobby/_on_leave_game_requested.
+	if not AppState.lobby_id.is_empty():
+		AppState.bc.lobby_service.leave_lobby(AppState.lobby_id)
+	_clear_lobby_state()
 	_hide_loading()
 	_show_screen(_MENU_SCENE)
 
@@ -262,7 +296,7 @@ func _ensure_rtt_enabled() -> Dictionary:
 	)
 	var result: Dictionary = await _async_done
 	_rtt_enabling = false
-	if result.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(result):
 		AppState.user_cx_id = AppState.bc.rtt_service.get_rtt_connection_id()
 		AppState.bc.rtt_service.register_rtt_lobby_callback(_on_rtt_lobby_event)
 	_rtt_ready.emit(result)
@@ -270,7 +304,7 @@ func _ensure_rtt_enabled() -> Dictionary:
 
 func _find_or_create_lobby(lobby_type: String, use_ping: bool) -> Dictionary:
 	var algo  := {"strategy": "ranged-absolute", "alignment": "center", "ranges": [1000]}
-	var extra := {"colorIndex": AppState.my_color_index, "presentSinceStart": true}
+	var extra := {"colorIndex": AppState.my_color_index, "rank": AppState.worldwide_rank, "presentSinceStart": true}
 	# CPP mainMenu.cpp: a "Team*" lobby type joins team "alpha" (CPP's UI also lets you pick
 	# Beta); every other lobby type uses "all". Sending "all" for a Team* lobby breaks team
 	# grouping and interop with the CPP/C# clients.
@@ -295,7 +329,7 @@ func _fetch_and_ping_regions(lobby_type: String) -> void:
 	# for regions that don't apply to this lobby type if either call below fails/no-ops.
 	AppState.ping_data.clear()
 	var result: Dictionary = await AppState.bc.lobby_service.get_regions_for_lobbies([lobby_type])
-	if result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(result):
 		push_error("get_regions_for_lobbies failed: ", result)
 		return
 
@@ -380,7 +414,7 @@ func _on_rtt_lobby_event(msg: Dictionary) -> void:
 			_on_lobby_signal_received(data)
 		"DISBANDED":
 			_hide_loading()
-			_tear_down_rtt()
+			_clear_lobby_state()
 			_show_screen(_MENU_SCENE)
 
 # This-lobby chat, via the Lobby service's send_signal. "from" is the server's authoritative
@@ -497,7 +531,7 @@ func _connect_relay(room_data: Dictionary) -> void:
 	var relay_result: Dictionary = await _async_done
 	print("[Relay] connect result: ", relay_result)
 
-	if relay_result.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(relay_result):
 		AppState.my_net_id = AppState.bc.relay_service.get_net_id()
 		AppState.bc.relay_service.register_system_callback(_on_relay_system)
 		AppState.bc.relay_service.register_relay_callback(_on_relay_data)
@@ -570,7 +604,7 @@ func _on_leave_game_requested() -> void:
 	AppState.game_start_time_ms = 0
 	if not AppState.lobby_id.is_empty():
 		AppState.bc.lobby_service.leave_lobby(AppState.lobby_id)
-	_tear_down_rtt()
+	_clear_lobby_state()
 	_show_screen(_MENU_SCENE)
 
 # The Match Summary + rematch-queue screen (BCLOUD-14489). match_result is usually already
@@ -598,7 +632,7 @@ func _on_match_ended_with_results() -> void:
 	if not AppState.lobby_id.is_empty():
 		var result: Dictionary = await AppState.bc.lobby_service.update_ready(
 			AppState.lobby_id, false,
-			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data}
+			{"colorIndex": AppState.my_color_index, "pings": AppState.ping_data, "rank": AppState.worldwide_rank}
 		)
 		_recover_if_lobby_gone(result)
 
@@ -611,12 +645,12 @@ const _LOBBY_NOT_FOUND_REASON := 40613
 # Rematch, ready-up, etc.) against a dead lobbyId.
 # Returns true if the caller should stop (the lobby is gone and we've already bailed out).
 func _recover_if_lobby_gone(result: Dictionary) -> bool:
-	if result.get("status", 0) == 200:
+	if BrainCloudWrapper.is_success(result):
 		return false
 	if int(result.get("reason_code", 0)) != _LOBBY_NOT_FOUND_REASON:
 		return false
 	_hide_loading()
-	_tear_down_rtt()
+	_clear_lobby_state()
 	_show_screen(_MENU_SCENE)
 	return true
 
@@ -664,7 +698,7 @@ func _host_post_match_results_to_cloud(round: int, entries: Array) -> void:
 	}
 
 	var result: Dictionary = await AppState.bc.script_service.run_script("PostMatchResults", payload)
-	if result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(result):
 		print("PostMatchResults script call failed for round %d: %s" % [round, result])
 		return
 	# The script's own return value is nested under data.response (a sibling of
@@ -750,7 +784,7 @@ func _tick_match_results_poll(delta: float) -> void:
 	var indexed_id: String = AppState.lobby_id + ":" + str(round)
 	var result: Dictionary = await AppState.bc.global_entity_service.get_list_by_indexed_id("matchResults", indexed_id, 1)
 	_results_poll_in_flight = false
-	if result.get("status", 0) != 200:
+	if not BrainCloudWrapper.is_success(result):
 		return # next tick retries
 	var entity_list: Array = result.get("data", {}).get("entityList", [])
 	if entity_list.is_empty():
@@ -770,7 +804,7 @@ func _on_rematch_ready_changed(ready: bool) -> void:
 	if ready:
 		_show_screen(_LOBBY_SCENE)
 
-	var extra := {"colorIndex": AppState.my_color_index}
+	var extra := {"colorIndex": AppState.my_color_index, "rank": AppState.worldwide_rank}
 	if not AppState.ping_data.is_empty():
 		extra["pings"] = AppState.ping_data
 	var result: Dictionary = await AppState.bc.lobby_service.update_ready(AppState.lobby_id, ready, extra)
@@ -778,24 +812,29 @@ func _on_rematch_ready_changed(ready: bool) -> void:
 
 func _on_match_summary_main_menu_requested() -> void:
 	AppState.bc.lobby_service.leave_lobby(AppState.lobby_id)
-	_tear_down_rtt()
+	_clear_lobby_state()
 	_show_screen(_MENU_SCENE)
 
 # ── Leave lobby ───────────────────────────────────────────────────────────────
 
 func _on_leave_lobby() -> void:
 	AppState.bc.lobby_service.leave_lobby(AppState.lobby_id)
-	_tear_down_rtt()
+	_clear_lobby_state()
 	_show_screen(_MENU_SCENE)
 
-func _tear_down_rtt() -> void:
-	AppState.bc.rtt_service.deregister_rtt_lobby_callback()
-	AppState.bc.rtt_service.disable_rtt()
+# Clears local lobby state on leaving a lobby/match. RTT stays up — see _tear_down_rtt below,
+# which is the real teardown but has no call site (this app has no logout flow yet).
+func _clear_lobby_state() -> void:
 	AppState.lobby_id = ""
 	AppState.lobby_owner_cx_id = ""
 	AppState.lobby_members.clear()
 	AppState.ping_data.clear()
 	AppState.lobby_chat_history.clear()
+
+# Real RTT teardown — for logout/app-shutdown/fatal-auth-error, none of which exist here yet.
+func _tear_down_rtt() -> void:
+	AppState.bc.rtt_service.deregister_rtt_lobby_callback()
+	AppState.bc.rtt_service.disable_rtt()
 
 # ── Loading overlay ───────────────────────────────────────────────────────────
 
