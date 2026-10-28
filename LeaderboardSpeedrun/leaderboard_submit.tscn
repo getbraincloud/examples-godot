@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://c72if6vm1jbkw"]
+
+[ext_resource type="Script" uid="uid://cvod3vkwapgev" path="res://leaderboard_submit.gd" id="1_3abbu"]
+
+[node name="LeaderboardSubmit" type="Node2D" unique_id=1255563711]
+script = ExtResource("1_3abbu")
+
+[node name="LineEdit" type="LineEdit" parent="." unique_id=800233596]
+offset_left = 429.0
+offset_top = 291.0
+offset_right = 785.0
+offset_bottom = 358.0
+
+[connection signal="text_submitted" from="LineEdit" to="." method="_on_line_edit_text_submitted"]
