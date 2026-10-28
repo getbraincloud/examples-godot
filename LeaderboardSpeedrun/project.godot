@@ -20,12 +20,6 @@ config/icon="res://icon.svg"
 
 brainCloud="*uid://d3asava6phsh7"
 
-[braincloud]
-
-config/app_id.web="15839"
-config/app_share.web="icEa90P8FtdbNivYEUB59lzMJN1vLY0V/zIs3AqDffwt+0nC"
-config/app_pad.web="vEFc/pPQOPnb3CIqpnxQEzgYe4jsAfJwao0ge7uiBB5OLg2f"
-
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/braincloud/plugin.cfg")
