@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://c8uv45iym7051"]
+
+[ext_resource type="Script" uid="uid://bxftllxomgckw" path="res://level.gd" id="1_oi3di"]
+[ext_resource type="Texture2D" uid="uid://drifkry1apk86" path="res://icon.svg" id="1_u52ul"]
+[ext_resource type="Script" uid="uid://bmgmr6vuk28ye" path="res://character_body_2d.gd" id="2_0b4ue"]
+[ext_resource type="Script" uid="uid://doyexc0t7pu6r" path="res://ball_spawner.gd" id="3_0b4ue"]
+[ext_resource type="Script" uid="uid://ovmbqlcyrxir" path="res://leader_board.gd" id="5_f2txt"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vonw3"]
+size = Vector2(122, 124)
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_oi3di"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0b4ue"]
+size = Vector2(1237, 20)
+
+[node name="Level" type="Node2D" unique_id=1604436170]
+script = ExtResource("1_oi3di")
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=399903577]
+position = Vector2(665, 449)
+script = ExtResource("2_0b4ue")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1832930398]
+position = Vector2(0, -1)
+shape = SubResource("RectangleShape2D_vonw3")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player" unique_id=851368935]
+texture = ExtResource("1_u52ul")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1642757783]
+position = Vector2(652, 676)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=1720957261]
+position = Vector2(0, -91)
+shape = SubResource("WorldBoundaryShape2D_oi3di")
+
+[node name="BallSpawner" type="Node2D" parent="." unique_id=178974522]
+position = Vector2(623, 24)
+script = ExtResource("3_0b4ue")
+
+[node name="Timer" type="Timer" parent="BallSpawner" unique_id=1461048539]
+autostart = true
+
+[node name="DeathArea" type="Area2D" parent="." unique_id=246990586]
+position = Vector2(656, 702)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DeathArea" unique_id=1164902547]
+position = Vector2(-74.5, 0)
+shape = SubResource("RectangleShape2D_0b4ue")
+
+[node name="ScoreLabel" type="Label" parent="." unique_id=980852569]
+offset_left = 86.0
+offset_top = 108.0
+offset_right = 243.0
+offset_bottom = 191.0
+
+[node name="LeaderBoardLabel" type="Label" parent="." unique_id=1524561203]
+offset_left = 956.0
+offset_top = 111.0
+offset_right = 1056.0
+offset_bottom = 134.0
+text = "Leaderboard"
+
+[node name="LeaderBoard" type="Label" parent="." unique_id=724190593]
+offset_left = 817.0
+offset_top = 149.0
+offset_right = 1140.0
+offset_bottom = 642.0
+script = ExtResource("5_f2txt")
+
+[connection signal="timeout" from="BallSpawner/Timer" to="BallSpawner" method="_on_timer_timeout"]
+[connection signal="area_entered" from="DeathArea" to="." method="_on_death_area_area_entered"]
