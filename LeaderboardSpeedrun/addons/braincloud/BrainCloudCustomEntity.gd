@@ -17,7 +17,7 @@ func _init(client_ref: BrainCloudClient) -> void:
 ## @param json_entity_acl The entity's access control list. A null acl implies default permissions
 ## @param time_to_live Sets expiry time for entity in milliseconds if > 0
 ## @param is_owned Whether this entity is owned by the current user
-func create_entity(entity_type: String, json_entity_data: Dictionary, json_entity_acl: Dictionary, time_to_live, is_owned: bool) -> Dictionary:
+func create_entity(entity_type: String, json_entity_data: Dictionary, json_entity_acl: Dictionary, time_to_live: int, is_owned: bool) -> Dictionary:
 	var data := {
 		OperationParam.CUSTOM_ENTITY_TYPE_NAME: entity_type,
 		OperationParam.CUSTOM_ENTITY_DATA: json_entity_data,
