@@ -3,5 +3,6 @@
 *.meta
 .vs/
 
-# brainCloud editor plugin credentials (app id/secret) — per-project, never committed
-addons/braincloud/braincloud.cfg
+# brainCloud app config (generated)
+/addons/braincloud/braincloud.cfg
+/.braincloud/build_profile.gd

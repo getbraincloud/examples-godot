@@ -1,1 +1,3 @@
-addons/braincloud/braincloud.cfg
+# brainCloud app config (generated)
+/addons/braincloud/braincloud.cfg
+/.braincloud/build_profile.gd
