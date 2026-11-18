@@ -52,6 +52,9 @@ func _export_begin(features: PackedStringArray, _is_debug: bool, _path: String, 
 	web.set_value("app", "app_id", str(resolved.get("app_id", "")))
 	web.set_value("app", "a", encoded["a"])
 	web.set_value("app", "b", encoded["b"])
+	var creds := ConfigFile.new()
+	if creds.load(_CREDS_PATH) == OK and creds.has_section_key("credentials", "server_url"):
+		web.set_value("app", "server_url", creds.get_value("credentials", "server_url"))
 	add_file(_WEB_CONFIG_PATH, web.encode_to_text().to_utf8_buffer(), false)
 
 func _config_reads() -> bool:

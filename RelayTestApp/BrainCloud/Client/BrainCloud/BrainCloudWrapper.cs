@@ -507,8 +507,15 @@ public class BrainCloudWrapper
     public void Init()
     {
         byte[] tuning = BrainCloudBootstrap.Read();
-        bool used = BrainCloud.Native.NativeConfig.UseConfig(BrainCloud.Native.NativeConfig.DefaultPath, tuning,
-            (appId, signRequest, serverUrl, version) => Init(serverUrl, signRequest, appId, version));
+        bool used = BrainCloud.Native.NativeConfig.UseConfigWithApps(BrainCloud.Native.NativeConfig.DefaultPath, tuning,
+            (appId, appProfiles, serverUrl, version) =>
+            {
+                // Child apps configured: load them too so SwitchToChildProfile can sign.
+                if (appProfiles.Count > 1)
+                    InitWithApps(serverUrl, appId, appProfiles, version);
+                else
+                    Init(serverUrl, appProfiles[appId], appId, version);
+            });
         BrainCloudBootstrap.Wipe(tuning);
 
         if (!used && System.IO.File.Exists(BrainCloud.Native.NativeConfig.DefaultPath))

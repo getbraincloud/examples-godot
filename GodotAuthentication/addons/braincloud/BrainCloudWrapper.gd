@@ -136,7 +136,7 @@ func init() -> void:
 		return
 	_native_secure = ClassDB.instantiate("BrainCloudNative")
 	var app_version: String = ProjectSettings.get_setting("braincloud/config/app_version", "1.0.0")
-	var server_url: String  = ProjectSettings.get_setting("braincloud/config/server_url", BrainCloudClient.DEFAULT_SERVER_URL)
+	var server_url := _config_server_url(_CREDS_PATH, "credentials")
 	var child_ids: PackedStringArray = _native_secure.resolve_child_ids(_CREDS_PATH)
 	_native_secure.resolve_configs(_CREDS_PATH, func(app_id: String, app_profiles: Dictionary):
 		# Main app first, then children in config order, for get_child_app_id_list().
@@ -151,6 +151,16 @@ func init() -> void:
 			initialize(app_profiles[app_id], app_id, app_version, server_url))
 	if not is_initialized() and FileAccess.file_exists(_CREDS_PATH):
 		push_error(_CONFIG_ERROR)
+
+# The server saved with the app, else the project setting (configs saved before the dock wrote it).
+static func _config_server_url(path: String, section: String) -> String:
+	var cfg := ConfigFile.new()
+	var url := ""
+	if cfg.load(path) == OK:
+		url = str(cfg.get_value(section, "server_url", ""))
+	if url.is_empty():
+		url = ProjectSettings.get_setting("braincloud/config/server_url", BrainCloudClient.DEFAULT_SERVER_URL)
+	return url
 
 # The project's build value: the dock's local profile in the editor/project folder, else the
 # copy the export plugin put on the exported main scene. BrainCloudNative calls this too.
@@ -217,7 +227,9 @@ func _init_from_project_settings() -> void:
 		push_error(_CONFIG_ERROR)
 		return
 	var app_version: String = ProjectSettings.get_setting("braincloud/config/app_version", "1.0.0")
-	var server_url: String  = ProjectSettings.get_setting("braincloud/config/server_url", BrainCloudClient.DEFAULT_SERVER_URL)
+	var server_url: String = web.get_value("app", "server_url", "")
+	if server_url.is_empty():
+		server_url = ProjectSettings.get_setting("braincloud/config/server_url", BrainCloudClient.DEFAULT_SERVER_URL)
 	initialize(profile, app_id, app_version, server_url)
 
 # Initialize the brainCloud client with the passed in parameters. This version overrides

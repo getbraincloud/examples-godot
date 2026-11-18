@@ -1508,8 +1508,18 @@ func _write_config(app_id: String, secret: String, override := PackedByteArray()
 		elif replace:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 		return "Failed to save credentials."
+	_save_config_server(_current_server_url())
 	_ensure_gitignore()
 	return ""
+
+
+# The server goes in the config with its app, so the config always talks to the server it was made for.
+func _save_config_server(url: String) -> void:
+	var cfg := ConfigFile.new()
+	if url.is_empty() or cfg.load(_CREDS_PATH) != OK:
+		return
+	cfg.set_value("credentials", "server_url", url)
+	cfg.save(_CREDS_PATH)
 
 
 func _store_text(path: String, text: String) -> bool:

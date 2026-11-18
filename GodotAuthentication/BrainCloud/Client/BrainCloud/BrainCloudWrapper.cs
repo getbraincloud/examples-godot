@@ -445,8 +445,13 @@ public class BrainCloudWrapper
         // `new BrainCloudNative()` -- there is no such compile-time type.
         _godotNative = Godot.ClassDB.Instantiate("BrainCloudNative").AsGodotObject();
         string appVersion = Godot.ProjectSettings.GetSetting("braincloud/config/app_version", "1.0.0").AsString();
-        string serverUrl = Godot.ProjectSettings.GetSetting(
-            "braincloud/config/server_url", "https://api.braincloudservers.com/dispatcherv2").AsString();
+        // The server saved with the app, else the project setting (configs saved before the dock wrote it).
+        var config = new Godot.ConfigFile();
+        string serverUrl = config.Load("res://addons/braincloud/braincloud.cfg") == Godot.Error.Ok
+            ? config.GetValue("credentials", "server_url", "").AsString() : "";
+        if (string.IsNullOrEmpty(serverUrl))
+            serverUrl = Godot.ProjectSettings.GetSetting(
+                "braincloud/config/server_url", "https://api.braincloudservers.com/dispatcherv2").AsString();
 
         string[] childIds = _godotNative.Call("resolve_child_ids", "res://addons/braincloud/braincloud.cfg").AsStringArray();
         bool resolved = false;
@@ -502,8 +507,15 @@ public class BrainCloudWrapper
     public void Init()
     {
         byte[] tuning = BrainCloudBootstrap.Read();
-        bool used = BrainCloud.Native.NativeConfig.UseConfig(BrainCloud.Native.NativeConfig.DefaultPath, tuning,
-            (appId, signRequest, serverUrl, version) => Init(serverUrl, signRequest, appId, version));
+        bool used = BrainCloud.Native.NativeConfig.UseConfigWithApps(BrainCloud.Native.NativeConfig.DefaultPath, tuning,
+            (appId, appProfiles, serverUrl, version) =>
+            {
+                // Child apps configured: load them too so SwitchToChildProfile can sign.
+                if (appProfiles.Count > 1)
+                    InitWithApps(serverUrl, appId, appProfiles, version);
+                else
+                    Init(serverUrl, appProfiles[appId], appId, version);
+            });
         BrainCloudBootstrap.Wipe(tuning);
 
         if (!used && System.IO.File.Exists(BrainCloud.Native.NativeConfig.DefaultPath))
